@@ -34,7 +34,8 @@ class FrigoPage extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 8),
               const Text(
@@ -42,24 +43,27 @@ class FrigoPage extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 96,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Placeholder: future fridge action
-                  },
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  ),
-                  child: const Text(
-                    'Frigo',
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              const SizedBox(height: 24),
+              Center(
+                child: SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Placeholder: future fridge action
+                    },
+                    style: ElevatedButton.styleFrom(
+                      shape: const CircleBorder(),
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.teal,
+                    ),
+                    child: const Text(
+                      'Frigo',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
                   ),
                 ),
               ),
-              // The rest of the page can be expanded later
               const SizedBox(height: 20),
               Expanded(
                 child: Center(
