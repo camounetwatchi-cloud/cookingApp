@@ -3,19 +3,39 @@ import 'package:flutter/material.dart';
 class DislikesPage extends StatefulWidget {
   final VoidCallback onNext;
   final VoidCallback onBack;
+  final Function(int) onUpdateSpice;
+  final Function(Set<String>) onUpdateDislikes;
+  final int initialSpiceLevel;
+  final Set<String> initialDislikedItems;
   
-  const DislikesPage({super.key, required this.onNext, required this.onBack});
+  const DislikesPage({
+    super.key,
+    required this.onNext,
+    required this.onBack,
+    required this.onUpdateSpice,
+    required this.onUpdateDislikes,
+    required this.initialSpiceLevel,
+    required this.initialDislikedItems,
+  });
 
   @override
   State<DislikesPage> createState() => _DislikesPageState();
 }
 
 class _DislikesPageState extends State<DislikesPage> {
-  int _spiceLevel = 1;
-  final TextEditingController _searchController = TextEditingController();
-  final List<String> _dislikedItems = [];
+  late int _spiceLevel;
+  late Set<String> _dislikedItems;
+  late TextEditingController _searchController;
   
   final List<String> _spiceLevels = ['Pas epice', 'Un peu epice', 'Tres epice'];
+
+  @override
+  void initState() {
+    super.initState();
+    _spiceLevel = widget.initialSpiceLevel;
+    _dislikedItems = Set.from(widget.initialDislikedItems);
+    _searchController = TextEditingController();
+  }
 
   @override
   void dispose() {
@@ -29,6 +49,7 @@ class _DislikesPageState extends State<DislikesPage> {
         _dislikedItems.add(item);
         _searchController.clear();
       });
+      widget.onUpdateDislikes(_dislikedItems);
     }
   }
 
@@ -36,6 +57,7 @@ class _DislikesPageState extends State<DislikesPage> {
     setState(() {
       _dislikedItems.remove(item);
     });
+    widget.onUpdateDislikes(_dislikedItems);
   }
 
   @override
@@ -82,6 +104,7 @@ class _DislikesPageState extends State<DislikesPage> {
                       setState(() {
                         _spiceLevel = index;
                       });
+                      widget.onUpdateSpice(_spiceLevel);
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -132,6 +155,7 @@ class _DislikesPageState extends State<DislikesPage> {
                 setState(() {
                   _spiceLevel = value.round();
                 });
+                widget.onUpdateSpice(_spiceLevel);
               },
             ),
           ),

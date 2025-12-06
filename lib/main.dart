@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
+import 'models/food_preferences.dart';
 import 'screens/onboarding/onboarding_flow.dart';
 
 void main() async {
@@ -117,7 +118,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
           
           // Show onboarding if not completed
           if (!_hasCompletedOnboarding!) {
-            return OnboardingFlow(onComplete: _completeOnboarding);
+            return OnboardingFlow(
+              onComplete: _completeOnboarding,
+              userId: user.uid,
+            );
           }
           
           return FrigoPage(user: user);
@@ -146,6 +150,8 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
+  bool _showEmailForm = false; // true = show email form, false = show 3 main buttons
   bool _isLoginMode = true; // true = login, false = register
   String? _errorMessage;
 
@@ -285,6 +291,30 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // Apple Sign-In (stub for now - would need AppleSignIn package)
+  Future<void> _signInWithApple() async {
+    setState(() {
+      _isAppleLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Apple Sign-In not fully implemented on web
+      // This is a placeholder for future implementation
+      setState(() {
+        _errorMessage = 'Apple Sign-In coming soon';
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Erreur Apple Sign-In: $e';
+      });
+    } finally {
+      setState(() {
+        _isAppleLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -295,198 +325,323 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.all(24.0),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Greeting
-                    const SizedBox(height: 24),
-                    Text(
-                      'Bonjour,',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                      textAlign: TextAlign.left,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Connecte-toi pour sauvegarder tes préférences et tes recettes.',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.w500,
-                          ),
-                      textAlign: TextAlign.left,
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Error message
-                    if (_errorMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red[200]!),
-                        ),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: Colors.red[700]),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Google Sign-In button (first)
-                    SizedBox(
-                      height: 50,
-                      child: OutlinedButton.icon(
-                        onPressed: _isGoogleLoading ? null : _signInWithGoogle,
-                        icon: _isGoogleLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Image.network(
-                                'https://www.google.com/favicon.ico',
-                                height: 24,
-                                width: 24,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.g_mobiledata, size: 24),
-                              ),
-                        label: const Text(
-                          'Continuer avec Google',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.grey[800],
-                          side: BorderSide(color: Colors.grey[400]!),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Divider
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: Colors.grey[400])),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'ou',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ),
-                        Expanded(child: Divider(color: Colors.grey[400])),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Email field
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Veuillez entrer votre email';
-                        }
-                        if (!value.contains('@')) {
-                          return 'Veuillez entrer un email valide';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Password field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: 'Mot de passe',
-                        prefixIcon: const Icon(Icons.lock_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Veuillez entrer votre mot de passe';
-                        }
-                        if (!_isLoginMode && value.length < 6) {
-                          return 'Le mot de passe doit contenir au moins 6 caractères';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Submit button (Email login/register)
-                    SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation(Colors.white),
-                                ),
-                              )
-                            : Text(
-                                _isLoginMode ? 'Se connecter avec Email' : 'Créer un compte',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Toggle login/register
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _isLoginMode = !_isLoginMode;
-                          _errorMessage = null;
-                        });
-                      },
-                      child: Text(
-                        _isLoginMode
-                            ? 'Pas encore de compte ? Créer un compte'
-                            : 'Déjà un compte ? Se connecter',
-                        style: TextStyle(color: Colors.blue[700]),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: _showEmailForm ? _buildEmailForm() : _buildMainButtons(),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Main login screen with 3 buttons: Google, Apple, Email
+  Widget _buildMainButtons() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 40),
+        
+        // Greeting
+        const Text(
+          'Bonjour,',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Connecte-toi pour sauvegarder tes préférences et tes recettes.',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+            height: 1.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 48),
+
+        // Error message
+        if (_errorMessage != null) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red[200]!),
+            ),
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(color: Colors.red[700], fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        // Button 1: Google
+        SizedBox(
+          height: 56,
+          child: OutlinedButton(
+            onPressed: _isGoogleLoading ? null : _signInWithGoogle,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.black87,
+              side: BorderSide(color: Colors.grey[300]!),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.white,
+            ),
+            child: _isGoogleLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.network(
+                        'https://www.google.com/favicon.ico',
+                        height: 20,
+                        width: 20,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.g_mobiledata, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Continuer avec Google',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Button 2: Apple
+        SizedBox(
+          height: 56,
+          child: OutlinedButton(
+            onPressed: _isAppleLoading ? null : _signInWithApple,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.black87,
+              side: BorderSide(color: Colors.grey[300]!),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.white,
+            ),
+            child: _isAppleLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.apple, size: 20),
+                      SizedBox(width: 12),
+                      Text(
+                        'Continuer avec Apple',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Button 3: Email
+        SizedBox(
+          height: 56,
+          child: OutlinedButton(
+            onPressed: () {
+              setState(() {
+                _showEmailForm = true;
+                _errorMessage = null;
+              });
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.black87,
+              side: BorderSide(color: Colors.grey[300]!),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.white,
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.mail_outline, size: 20),
+                SizedBox(width: 12),
+                Text(
+                  'Continuer avec Email',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Email login/register form
+  Widget _buildEmailForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 40),
+          
+          // Back button + Title
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showEmailForm = false;
+                    _errorMessage = null;
+                    _emailController.clear();
+                    _passwordController.clear();
+                    _isLoginMode = true;
+                  });
+                },
+                child: const Icon(Icons.arrow_back, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  _isLoginMode ? 'Se connecter' : 'Créer un compte',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Error message
+          if (_errorMessage != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red[200]!),
+              ),
+              child: Text(
+                _errorMessage!,
+                style: TextStyle(color: Colors.red[700], fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // Email field
+          TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              labelText: 'Email',
+              prefixIcon: const Icon(Icons.email_outlined),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Veuillez entrer votre email';
+              }
+              if (!value.contains('@')) {
+                return 'Veuillez entrer un email valide';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Password field
+          TextFormField(
+            controller: _passwordController,
+            obscureText: true,
+            decoration: InputDecoration(
+              labelText: 'Mot de passe',
+              prefixIcon: const Icon(Icons.lock_outlined),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Veuillez entrer votre mot de passe';
+              }
+              if (!_isLoginMode && value.length < 6) {
+                return 'Le mot de passe doit contenir au moins 6 caractères';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 24),
+
+          // Submit button
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A9FFF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      _isLoginMode ? 'Se connecter' : 'Créer un compte',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Toggle login/register
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _isLoginMode = !_isLoginMode;
+                _errorMessage = null;
+              });
+            },
+            child: Text(
+              _isLoginMode
+                  ? 'Pas encore de compte ? Créer un compte'
+                  : 'Déjà un compte ? Se connecter',
+              style: const TextStyle(color: Color(0xFF4A9FFF), fontSize: 14),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -603,19 +758,16 @@ class _FrigoPageState extends State<FrigoPage> {
               if (value == 'logout') {
                 _signOut();
               } else if (value == 'preferences') {
-                // Reset onboarding for this user and launch onboarding flow
-                final prefs = await SharedPreferences.getInstance();
-                final key = 'onboarding_completed_${widget.user.uid}';
-                await prefs.setBool(key, false);
-
-                // Push onboarding flow so user can re-select preferences
+                // Load existing preferences and launch onboarding flow
+                final existingPrefs = await FoodPreferences.loadForUser(widget.user.uid);
+                
                 if (mounted) {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => OnboardingFlow(
-                        onComplete: () async {
-                          // mark onboarding completed
-                          await prefs.setBool(key, true);
+                        userId: widget.user.uid,
+                        existingPreferences: existingPrefs,
+                        onComplete: () {
                           // pop onboarding and return to FrigoPage
                           if (mounted) Navigator.of(context).pop();
                         },

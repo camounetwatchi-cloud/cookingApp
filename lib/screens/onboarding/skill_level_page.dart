@@ -3,15 +3,29 @@ import 'package:flutter/material.dart';
 class SkillLevelPage extends StatefulWidget {
   final VoidCallback onNext;
   final VoidCallback onBack;
+  final Function(int) onUpdate;
+  final int initialValue;
   
-  const SkillLevelPage({super.key, required this.onNext, required this.onBack});
+  const SkillLevelPage({
+    super.key,
+    required this.onNext,
+    required this.onBack,
+    required this.onUpdate,
+    required this.initialValue,
+  });
 
   @override
   State<SkillLevelPage> createState() => _SkillLevelPageState();
 }
 
 class _SkillLevelPageState extends State<SkillLevelPage> {
-  int _selectedLevel = 1;
+  late int _selectedLevel;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedLevel = widget.initialValue;
+  }
   
   final List<String> _levelNames = ['Debutant', 'Intermediaire', 'Avance'];
   
@@ -65,6 +79,7 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
                       setState(() {
                         _selectedLevel = index;
                       });
+                      widget.onUpdate(_selectedLevel);
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -115,6 +130,7 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
                 setState(() {
                   _selectedLevel = value.round();
                 });
+                widget.onUpdate(_selectedLevel);
               },
             ),
           ),

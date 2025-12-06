@@ -3,15 +3,29 @@ import 'package:flutter/material.dart';
 class PantryBasicsPage extends StatefulWidget {
   final VoidCallback onNext;
   final VoidCallback onBack;
+  final Function(Set<String>) onUpdate;
+  final Set<String> initialValue;
   
-  const PantryBasicsPage({super.key, required this.onNext, required this.onBack});
+  const PantryBasicsPage({
+    super.key,
+    required this.onNext,
+    required this.onBack,
+    required this.onUpdate,
+    required this.initialValue,
+  });
 
   @override
   State<PantryBasicsPage> createState() => _PantryBasicsPageState();
 }
 
 class _PantryBasicsPageState extends State<PantryBasicsPage> {
-  final Set<String> _selectedItems = {};
+  late Set<String> _selectedItems;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedItems = Set.from(widget.initialValue);
+  }
   
   final Map<String, List<String>> _categories = {
     'CONDIMENTS': ['Sel', 'Poivre', 'Vinaigre'],
@@ -27,6 +41,7 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
         _selectedItems.add(item);
       }
     });
+    widget.onUpdate(_selectedItems);
   }
 
   @override

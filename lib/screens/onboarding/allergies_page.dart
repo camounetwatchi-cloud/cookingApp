@@ -2,15 +2,28 @@ import 'package:flutter/material.dart';
 
 class AllergiesPage extends StatefulWidget {
   final VoidCallback onNext;
+  final Function(Set<String>) onUpdate;
+  final Set<String> initialValue;
   
-  const AllergiesPage({super.key, required this.onNext});
+  const AllergiesPage({
+    super.key,
+    required this.onNext,
+    required this.onUpdate,
+    required this.initialValue,
+  });
 
   @override
   State<AllergiesPage> createState() => _AllergiesPageState();
 }
 
 class _AllergiesPageState extends State<AllergiesPage> {
-  final Set<String> _selectedAllergies = {};
+  late Set<String> _selectedAllergies;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedAllergies = Set.from(widget.initialValue);
+  }
   
   final List<Map<String, dynamic>> _allergies = [
     {'name': 'Gluten', 'icon': '🌾'},
@@ -35,6 +48,7 @@ class _AllergiesPageState extends State<AllergiesPage> {
         _selectedAllergies.add(allergy);
       }
     });
+    widget.onUpdate(_selectedAllergies);
   }
 
   @override
@@ -58,7 +72,7 @@ class _AllergiesPageState extends State<AllergiesPage> {
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Subtitle
           Text(
@@ -71,7 +85,7 @@ class _AllergiesPageState extends State<AllergiesPage> {
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 40),
+          const SizedBox(height: 24),
           
           // Allergy grid - 3 columns
           Expanded(

@@ -3,15 +3,29 @@ import 'package:flutter/material.dart';
 class KitchenEquipmentPage extends StatefulWidget {
   final VoidCallback onNext;
   final VoidCallback onBack;
+  final Function(Set<String>) onUpdate;
+  final Set<String> initialValue;
   
-  const KitchenEquipmentPage({super.key, required this.onNext, required this.onBack});
+  const KitchenEquipmentPage({
+    super.key,
+    required this.onNext,
+    required this.onBack,
+    required this.onUpdate,
+    required this.initialValue,
+  });
 
   @override
   State<KitchenEquipmentPage> createState() => _KitchenEquipmentPageState();
 }
 
 class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
-  final Set<String> _selectedEquipment = {};
+  late Set<String> _selectedEquipment;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedEquipment = Set.from(widget.initialValue);
+  }
   
   final List<Map<String, String>> _equipment = [
     {'name': 'Four', 'icon': '\u{1F525}'},
@@ -30,6 +44,7 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
         _selectedEquipment.add(item);
       }
     });
+    widget.onUpdate(_selectedEquipment);
   }
 
   @override

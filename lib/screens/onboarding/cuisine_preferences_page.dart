@@ -3,15 +3,29 @@ import 'package:flutter/material.dart';
 class CuisinePreferencesPage extends StatefulWidget {
   final VoidCallback onNext;
   final VoidCallback onBack;
+  final Function(Set<String>) onUpdate;
+  final Set<String> initialValue;
   
-  const CuisinePreferencesPage({super.key, required this.onNext, required this.onBack});
+  const CuisinePreferencesPage({
+    super.key,
+    required this.onNext,
+    required this.onBack,
+    required this.onUpdate,
+    required this.initialValue,
+  });
 
   @override
   State<CuisinePreferencesPage> createState() => _CuisinePreferencesPageState();
 }
 
 class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
-  final Set<String> _selectedCuisines = {};
+  late Set<String> _selectedCuisines;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedCuisines = Set.from(widget.initialValue);
+  }
   
   final List<Map<String, String>> _cuisines = [
     {'name': 'Francais', 'icon': '\u{1F956}'},
@@ -32,6 +46,7 @@ class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
         _selectedCuisines.add(cuisine);
       }
     });
+    widget.onUpdate(_selectedCuisines);
   }
 
   @override
