@@ -662,6 +662,8 @@ class _FrigoPageState extends State<FrigoPage> {
   final ImagePicker _picker = ImagePicker();
   bool _loading = false;
   List<String> _items = [];
+  final TextEditingController _manualItemController = TextEditingController();
+  final Set<String> _allItems = {}; // All items: detected + manually added
 
   // Backend URL: change to your deployed backend for production
   static const String backendUrl = 'http://localhost:8080/api/fridge';
@@ -714,6 +716,7 @@ class _FrigoPageState extends State<FrigoPage> {
         }
         setState(() {
           _items = items;
+          _allItems.addAll(items);
         });
         if (items.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -744,66 +747,6 @@ class _FrigoPageState extends State<FrigoPage> {
 
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
-  }
-
-  Widget _buildPill(BuildContext context, String label, IconData icon, {bool selected = false}) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Catégorie "$label" sélectionnée'),
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(28),
-        child: Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: 420),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-          decoration: BoxDecoration(
-            color: selected ? Colors.blue[600] : Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: selected
-                ? [BoxShadow(color: Colors.blue.withOpacity(0.18), blurRadius: 10, offset: const Offset(0, 6))]
-                : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 4))],
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: selected ? Colors.white : Colors.grey[700]),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(color: selected ? Colors.white : Colors.black87, fontWeight: FontWeight.w600),
-                ),
-              ),
-              Icon(Icons.arrow_forward_ios, size: 18, color: selected ? Colors.white : Colors.grey),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomPill(String label, {bool selected = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 18),
-        decoration: BoxDecoration(
-          color: selected ? Colors.blue[600] : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 4))],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(color: selected ? Colors.white : Colors.black87, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
   }
 
   @override
@@ -872,21 +815,19 @@ class _FrigoPageState extends State<FrigoPage> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 8),
               const Text(
                 "On cuisine quoi aujourd'hui ?",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF1E90FF)),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 18),
 
-              // Scan card (rounded, blurred background look)
+              // Scan card
               Center(
                 child: Material(
                   color: Colors.transparent,
@@ -920,12 +861,14 @@ class _FrigoPageState extends State<FrigoPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
-                              child: Icon(Icons.qr_code_scanner, size: 34, color: Colors.black54),
+                              child: _loading
+                                  ? const CircularProgressIndicator(strokeWidth: 2)
+                                  : Icon(Icons.qr_code_scanner, size: 34, color: Colors.black54),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Scanner mon frigo',
+                            _loading ? 'Analyse...' : 'Scanner mon frigo',
                             style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -934,61 +877,155 @@ class _FrigoPageState extends State<FrigoPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 24),
 
-              // Search field
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(28),
+              // Detected items section
+              if (_allItems.isNotEmpty) ...[
+                const Text(
+                  'Aliments dans mon frigo',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.search, color: Colors.grey),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: "Search",
-                          border: InputBorder.none,
-                          isDense: true,
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _allItems.map((item) {
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() => _allItems.remove(item));
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[100],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.blue[400]!),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item,
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Icon(Icons.close, size: 16, color: Colors.blue[700]),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Manual add section
+              const Text(
+                'Ajouter manuellement',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+              ),
+              const SizedBox(height: 12),
+
+              // Quick category buttons
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['Viande', 'Poissons', 'Légumes', 'Fruits', 'Œufs', 'Produits laitiers', 'Pain', 'Pâtes']
+                    .map((category) {
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() => _allItems.add(category));
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.grey[400]!),
+                        ),
+                        child: Text(
+                          category,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
-                    const Icon(Icons.mic, color: Colors.grey),
-                  ],
-                ),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
-              // Category pills
-              Column(
+              // Manual input field
+              Row(
                 children: [
-                  _buildPill(context, 'Viande', Icons.set_meal, selected: false),
-                  const SizedBox(height: 12),
-                  _buildPill(context, 'Legumes', Icons.grass, selected: true),
-                  const SizedBox(height: 12),
-                  _buildPill(context, 'Poissons', Icons.pool, selected: false),
-                  const SizedBox(height: 12),
-                  _buildPill(context, 'Fruits', Icons.local_grocery_store, selected: false),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: TextField(
+                        controller: _manualItemController,
+                        decoration: InputDecoration(
+                          hintText: 'Ajouter un aliment...',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          isDense: true,
+                        ),
+                        onSubmitted: (value) {
+                          if (value.trim().isNotEmpty) {
+                            setState(() {
+                              _allItems.add(value.trim());
+                              _manualItemController.clear();
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue[400],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          if (_manualItemController.text.trim().isNotEmpty) {
+                            setState(() {
+                              _allItems.add(_manualItemController.text.trim());
+                              _manualItemController.clear();
+                            });
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Icon(Icons.add, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-
-              const Spacer(),
-
-              // Bottom navigation style pills
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildBottomPill('Accueil', selected: true),
-                    _buildBottomPill('Scanner', selected: false),
-                    _buildBottomPill('Favoris', selected: false),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
