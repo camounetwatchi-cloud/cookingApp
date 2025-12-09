@@ -13,7 +13,7 @@ app.use(express.json({ limit: '10mb' }));
 
 const PORT = process.env.PORT || 8080;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const DEV_MOCK = process.env.DEV_MOCK === 'true';
+const DEV_MOCK = process.env.DEV_MOCK === 'true' || true; // Enable dev mock by default
 
 app.post('/api/fridge', upload.single('photo'), async (req, res) => {
   try {
