@@ -13,6 +13,8 @@ import 'firebase_options.dart';
 import 'models/food_preferences.dart';
 import 'screens/onboarding/onboarding_flow.dart';
 import 'ui/design_system.dart';
+import 'screens/home/scan_and_recipes.dart';
+import 'ui/design_system.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -648,7 +650,6 @@ class _LoginPageState extends State<LoginPage> {
 // ==================== FRIGO PAGE ====================
 class FrigoPage extends StatefulWidget {
   final User user;
-  
   const FrigoPage({super.key, required this.user});
 
   @override
@@ -672,11 +673,21 @@ class _FrigoPageState extends State<FrigoPage> {
         _items = [];
       });
 
+      // Show scan progress overlay
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const ScanInProgressPage(),
+        );
+      }
+
       // On web, use gallery. On mobile, offer choice or use camera.
       final ImageSource source = kIsWeb ? ImageSource.gallery : ImageSource.gallery;
       final XFile? picked = await _picker.pickImage(source: source);
       if (picked == null) {
         setState(() => _loading = false);
+        if (mounted) Navigator.of(context).pop(); // close dialog
         return;
       }
 
@@ -733,6 +744,9 @@ class _FrigoPageState extends State<FrigoPage> {
       );
     } finally {
       setState(() => _loading = false);
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // close dialog
+      }
     }
   }
 
@@ -748,7 +762,9 @@ class _FrigoPageState extends State<FrigoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Cahier de cuisine'),
         centerTitle: true,
@@ -759,9 +775,7 @@ class _FrigoPageState extends State<FrigoPage> {
               if (value == 'logout') {
                 _signOut();
               } else if (value == 'preferences') {
-                // Load existing preferences and launch onboarding flow
                 final existingPrefs = await FoodPreferences.loadForUser(widget.user.uid);
-                
                 if (mounted) {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -769,7 +783,6 @@ class _FrigoPageState extends State<FrigoPage> {
                         userId: widget.user.uid,
                         existingPreferences: existingPrefs,
                         onComplete: () {
-                          // pop onboarding and return to FrigoPage
                           if (mounted) Navigator.of(context).pop();
                         },
                       ),
@@ -783,17 +796,17 @@ class _FrigoPageState extends State<FrigoPage> {
                 enabled: false,
                 child: Text(
                   widget.user.email ?? 'Utilisateur',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(color: AppColors.textMuted),
                 ),
               ),
               const PopupMenuDivider(),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'preferences',
                 child: Row(
                   children: [
-                    const Icon(Icons.restaurant_menu, color: Colors.teal),
-                    const SizedBox(width: 8),
-                    const Text('Mes préférences alimentaires'),
+                    Icon(Icons.restaurant_menu, color: AppColors.primaryBlue),
+                    SizedBox(width: 8),
+                    Text('Mes préférences alimentaires'),
                   ],
                 ),
               ),
@@ -813,176 +826,148 @@ class _FrigoPageState extends State<FrigoPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
-              const Text(
-                "On cuisine quoi aujourd'hui ?",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF1E90FF)),
+              Text(
+                "Salut $_userName 👋",
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Prêt à scanner ton frigo et cuisiner ?",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textMuted,
+                ),
               ),
               const SizedBox(height: 18),
 
               // Scan card
-              Center(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _loading ? null : _pickAndUpload,
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxWidth: 360, minHeight: 110),
-                      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
+              GlassContainer(
+                padding: const EdgeInsets.all(18),
+                borderRadius: 22,
+                backgroundOpacity: 0.38,
+                strokeOpacity: 0.22,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        GlassContainer(
+                          padding: const EdgeInsets.all(14),
+                          borderRadius: 16,
+                          backgroundOpacity: 0.32,
+                          strokeOpacity: 0.22,
+                          child: Icon(
+                            _loading ? Icons.hourglass_top : Icons.qr_code_scanner,
+                            color: AppColors.primaryBlue,
+                            size: 28,
                           ),
-                        ],
-                        border: Border.all(color: Colors.white.withOpacity(0.6)),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _loading ? 'Analyse en cours…' : 'Scanner mon frigo',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    ElevatedButton.icon(
+                      onPressed: _loading ? null : _pickAndUpload,
+                      icon: const Icon(Icons.camera_alt, size: 18),
+                      label: Text(
+                        _loading ? 'Analyse…' : 'Lancer un scan',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Center(
-                              child: _loading
-                                  ? const CircularProgressIndicator(strokeWidth: 2)
-                                  : Icon(Icons.qr_code_scanner, size: 34, color: Colors.black54),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _loading ? 'Analyse...' : 'Scanner mon frigo',
-                            style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600),
-                          ),
-                        ],
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
 
-              // Detected items section
+              const SizedBox(height: 20),
+
               if (_allItems.isNotEmpty) ...[
-                const Text(
-                  'Aliments dans mon frigo',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Aliments détectés',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => RecipeSuggestionsPage(
+                              items: _allItems.toList(),
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Voir les recettes'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _allItems.map((item) {
-                    return Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() => _allItems.remove(item));
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[100],
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.blue[400]!),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                item,
-                                style: const TextStyle(
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Icon(Icons.close, size: 16, color: Colors.blue[700]),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                  children: _allItems.map((item) => _chip(
+                    label: item,
+                    onRemove: () => setState(() => _allItems.remove(item)),
+                    selected: true,
+                  )).toList(),
                 ),
-                const SizedBox(height: 24),
-              ],
+                const SizedBox(height: 20),
+              ),
 
-              // Manual add section
-              const Text(
+              Text(
                 'Ajouter manuellement',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              const SizedBox(height: 12),
-
-              // Quick category buttons
+              const SizedBox(height: 10),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 10,
+                runSpacing: 10,
                 children: ['Viande', 'Poissons', 'Légumes', 'Fruits', 'Œufs', 'Produits laitiers', 'Pain', 'Pâtes']
-                    .map((category) {
-                  return Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() => _allItems.add(category));
-                      },
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.grey[400]!),
-                        ),
-                        child: Text(
-                          category,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+                    .map((category) => _chip(
+                      label: category,
+                      onTap: () => setState(() => _allItems.add(category)),
+                      selected: false,
+                    ))
+                    .toList(),
               ),
-              const SizedBox(height: 16),
-
-              // Manual input field
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
+              const SizedBox(height: 14),
+              GlassContainer(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                borderRadius: 16,
+                child: Row(
+                  children: [
+                    const Icon(Icons.add, color: AppColors.primaryBlue),
+                    const SizedBox(width: 10),
+                    Expanded(
                       child: TextField(
                         controller: _manualItemController,
-                        decoration: InputDecoration(
-                          hintText: 'Ajouter un aliment...',
+                        decoration: const InputDecoration(
+                          hintText: 'Ajouter un aliment…',
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                          isDense: true,
                         ),
                         onSubmitted: (value) {
                           if (value.trim().isNotEmpty) {
@@ -994,37 +979,87 @@ class _FrigoPageState extends State<FrigoPage> {
                         },
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.blue[400],
-                      borderRadius: BorderRadius.circular(12),
+                    IconButton(
+                      icon: const Icon(Icons.send, color: AppColors.primaryBlue),
+                      onPressed: () {
+                        if (_manualItemController.text.trim().isNotEmpty) {
+                          setState(() {
+                            _allItems.add(_manualItemController.text.trim());
+                            _manualItemController.clear();
+                          });
+                        }
+                      },
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          if (_manualItemController.text.trim().isNotEmpty) {
-                            setState(() {
-                              _allItems.add(_manualItemController.text.trim());
-                              _manualItemController.clear();
-                            });
-                          }
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Icon(Icons.add, color: Colors.white, size: 20),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              if (_allItems.isNotEmpty)
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => RecipeSuggestionsPage(
+                          items: _allItems.toList(),
                         ),
                       ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 32),
+                  child: const Text(
+                    'Proposer des recettes',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              if (_allItems.isEmpty)
+                Text(
+                  'Ajoute des aliments ou scanne ton frigo\npour générer des idées.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textMuted,
+                    height: 1.4,
+                  ),
+                ),
+              const SizedBox(height: 20),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chip({required String label, VoidCallback? onTap, VoidCallback? onRemove, bool selected = false}) {
+    return GestureDetector(
+      onTap: onTap ?? onRemove,
+      child: GlassContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        borderRadius: 16,
+        backgroundOpacity: selected ? 0.52 : 0.26,
+        strokeOpacity: selected ? 0.32 : 0.18,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+            if (onRemove != null) ...[
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: onRemove,
+                child: const Icon(Icons.close, size: 16, color: Colors.white),
+              ),
+            ],
+          ],
         ),
       ),
     );
