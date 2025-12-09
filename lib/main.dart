@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'models/food_preferences.dart';
 import 'screens/onboarding/onboarding_flow.dart';
+import 'ui/design_system.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,11 +30,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Cahier de cuisine',
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        // Make page background white across the app
-        scaffoldBackgroundColor: Colors.white,
-      ),
+      theme: AppTheme.light(),
       home: const AuthWrapper(),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../ui/design_system.dart';
 
 class AllergiesPage extends StatefulWidget {
   final VoidCallback onNext;
@@ -53,39 +54,38 @@ class _AllergiesPageState extends State<AllergiesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           
           // Title
-          const Text(
+          Text(
             'Tes allergies\nalimentaires',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-              height: 1.1,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.05,
             ),
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           
           // Subtitle
           Text(
-            'Selectionnes les aliments auxquels tu es allergique.\nOn les prendra en compte dans nos recettes.',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[400],
+            'Selectionne les aliments auxquels tu es allergique.\nOn les prendra en compte dans nos recettes.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textMuted,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 22),
           
           // Allergy grid - 3 columns
           Expanded(
@@ -103,14 +103,11 @@ class _AllergiesPageState extends State<AllergiesPage> {
                 final isSelected = _selectedAllergies.contains(allergy['name']);
                 return GestureDetector(
                   onTap: () => _toggleAllergy(allergy['name']),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      color: isSelected 
-                          ? const Color(0xFF4A9FFF) 
-                          : const Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.circular(25),
-                    ),
+                  child: GlassContainer(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    borderRadius: 22,
+                    backgroundOpacity: isSelected ? 0.48 : 0.28,
+                    strokeOpacity: isSelected ? 0.32 : 0.18,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
@@ -123,10 +120,9 @@ class _AllergiesPageState extends State<AllergiesPage> {
                         Flexible(
                           child: Text(
                             allergy['name'],
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isSelected ? Colors.white : Colors.black87,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isSelected ? Colors.white : AppColors.textPrimary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -139,19 +135,16 @@ class _AllergiesPageState extends State<AllergiesPage> {
             ),
           ),
           
-          // Next button - Blue rounded with play icon
+          // Next button - uses theme primary
           Padding(
             padding: const EdgeInsets.only(bottom: 32, top: 16),
             child: ElevatedButton(
               onPressed: widget.onNext,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A9FFF),
-                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                elevation: 0,
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,

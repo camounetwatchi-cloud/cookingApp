@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../ui/design_system.dart';
 
 class CuisinePreferencesPage extends StatefulWidget {
   final VoidCallback onNext;
@@ -51,39 +52,38 @@ class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           
           // Title
-          const Text(
-            'Tes cuisines\npreferees',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-              height: 1.1,
+          Text(
+            'Tes cuisines\npréférées',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.05,
             ),
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Subtitle
           Text(
-            'Choisis les styles de cuisine que tu aimes le plus.\nOn s\'en inspirera !',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[400],
+            'Choisis les styles de cuisine que tu aimes le plus.\nOn s’en inspirera !',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textMuted,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
           
           // Cuisines grid - 2 columns
           Expanded(
@@ -93,7 +93,7 @@ class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 2.8,
+                childAspectRatio: 2.6,
               ),
               itemCount: _cuisines.length,
               itemBuilder: (context, index) {
@@ -101,19 +101,11 @@ class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
                 final isSelected = _selectedCuisines.contains(cuisine['name']);
                 return GestureDetector(
                   onTap: () => _toggleCuisine(cuisine['name']!),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF4A9FFF) : const Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: isSelected ? [
-                        BoxShadow(
-                          color: const Color(0xFF4A9FFF).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ] : null,
-                    ),
+                  child: GlassContainer(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    borderRadius: 22,
+                    backgroundOpacity: isSelected ? 0.5 : 0.26,
+                    strokeOpacity: isSelected ? 0.32 : 0.18,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -122,12 +114,14 @@ class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
                           style: const TextStyle(fontSize: 18),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          cuisine['name']!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : Colors.black87,
+                        Flexible(
+                          child: Text(
+                            cuisine['name']!,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: isSelected ? Colors.white : AppColors.textPrimary,
+                            ),
                           ),
                         ),
                       ],
@@ -140,17 +134,14 @@ class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
           
           // Next button
           Padding(
-            padding: const EdgeInsets.only(bottom: 32, top: 16),
+            padding: const EdgeInsets.only(bottom: 32, top: 12),
             child: ElevatedButton(
               onPressed: widget.onNext,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A9FFF),
-                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                elevation: 0,
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,

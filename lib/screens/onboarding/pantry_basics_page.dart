@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../ui/design_system.dart';
 
 class PantryBasicsPage extends StatefulWidget {
   final VoidCallback onNext;
@@ -46,43 +47,42 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           
           // Title
-          const Center(
+          Center(
             child: Text(
               'Tes basiques\ndu placard',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-                height: 1.1,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                height: 1.05,
               ),
               textAlign: TextAlign.center,
             ),
           ),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Subtitle
           Center(
             child: Text(
-              'Coches ce que tu as presque toujours chez toi.\nOn les utilisera dans les recettes',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey[400],
+              'Coche ce que tu as presque toujours chez toi.\nOn les utilisera dans les recettes',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textMuted,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
             ),
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           
           // Scrollable content with categories
           Expanded(
@@ -90,7 +90,7 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: _categories.entries.map((entry) {
-                  return _buildCategory(entry.key, entry.value);
+                  return _buildCategory(entry.key, entry.value, theme);
                 }).toList(),
               ),
             ),
@@ -103,13 +103,10 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
               child: ElevatedButton(
                 onPressed: widget.onNext,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A9FFF),
-                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                  elevation: 0,
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
@@ -133,7 +130,7 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
     );
   }
 
-  Widget _buildCategory(String title, List<String> items) {
+  Widget _buildCategory(String title, List<String> items, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -142,11 +139,10 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
           padding: const EdgeInsets.only(bottom: 12),
           child: Text(
             title,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-              letterSpacing: 0.5,
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textMuted,
+              letterSpacing: 0.6,
             ),
           ),
         ),
@@ -159,19 +155,16 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
             final isSelected = _selectedItems.contains(item);
             return GestureDetector(
               onTap: () => _toggleItem(item),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF4A9FFF) : const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(25),
-                ),
+              child: GlassContainer(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                borderRadius: 18,
+                backgroundOpacity: isSelected ? 0.5 : 0.24,
+                strokeOpacity: isSelected ? 0.32 : 0.18,
                 child: Text(
                   item,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected ? Colors.white : Colors.black87,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
               ),

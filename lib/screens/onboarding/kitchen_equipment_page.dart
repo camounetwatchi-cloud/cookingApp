@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../ui/design_system.dart';
 
 class KitchenEquipmentPage extends StatefulWidget {
   final VoidCallback onNext;
@@ -49,39 +50,38 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           
           // Title
-          const Text(
-            'Ton equipement\nde cuisine',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-              height: 1.1,
+          Text(
+            'Ton équipement\nde cuisine',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.05,
             ),
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Subtitle
           Text(
-            'On evitera de te proposer une\nrecette au for si tu n\'en as pas !',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[400],
+            'On évitera de te proposer une\nrecette au four si tu n’en as pas !',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textMuted,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           
           // Equipment list
           Expanded(
@@ -94,20 +94,11 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
                 final isSelected = _selectedEquipment.contains(item['name']);
                 return GestureDetector(
                   onTap: () => _toggleEquipment(item['name']!),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF4A9FFF) : const Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: isSelected ? [
-                        BoxShadow(
-                          color: const Color(0xFF4A9FFF).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ] : null,
-                    ),
+                  child: GlassContainer(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                    borderRadius: 22,
+                    backgroundOpacity: isSelected ? 0.5 : 0.26,
+                    strokeOpacity: isSelected ? 0.32 : 0.18,
                     child: Row(
                       children: [
                         Text(
@@ -117,10 +108,9 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
                         const SizedBox(width: 12),
                         Text(
                           item['name']!,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: isSelected ? Colors.white : Colors.black87,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? Colors.white : AppColors.textPrimary,
                           ),
                         ),
                       ],
@@ -137,13 +127,10 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
             child: ElevatedButton(
               onPressed: widget.onNext,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A9FFF),
-                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                elevation: 0,
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,

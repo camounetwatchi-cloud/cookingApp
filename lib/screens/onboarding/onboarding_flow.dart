@@ -6,6 +6,7 @@ import 'pantry_basics_page.dart';
 import 'cuisine_preferences_page.dart';
 import 'kitchen_equipment_page.dart';
 import 'dislikes_page.dart';
+import '../../ui/design_system.dart';
 
 class OnboardingFlow extends StatefulWidget {
   final VoidCallback onComplete;
@@ -104,26 +105,29 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            // Progress dots - aligned left, black/grey style
+            // Progress dots - aligned left, Apple-like subtle dots
             Padding(
-              padding: const EdgeInsets.only(left: 24.0, top: 16.0, bottom: 8.0),
+              padding: const EdgeInsets.only(left: 24.0, top: 20.0, bottom: 12.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: List.generate(_totalPages, (index) {
                   final isCompleted = index <= _currentPage;
-                  return Container(
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     margin: const EdgeInsets.only(right: 8),
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
                       color: isCompleted 
-                          ? Colors.black87
-                          : Colors.grey[300],
+                          ? AppColors.primaryBlue
+                          : AppColors.textMuted.withOpacity(0.25),
                       shape: BoxShape.circle,
                     ),
                   );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../ui/design_system.dart';
 
 class SkillLevelPage extends StatefulWidget {
   final VoidCallback onNext;
@@ -37,39 +38,37 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 32),
-          const Text(
+          const SizedBox(height: 28),
+          Text(
             'Ton niveau en\ncuisine',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-              height: 1.1,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.05,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
-            'On adaptera les recettes a ton experience',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[400],
+            'On adaptera les recettes à ton expérience',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textMuted,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
           const Spacer(flex: 2),
-          Container(
+          GlassContainer(
             padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(30),
-            ),
+            borderRadius: 26,
+            backgroundOpacity: 0.32,
+            strokeOpacity: 0.18,
             child: Row(
               children: List.generate(3, (index) {
                 final isSelected = _selectedLevel == index;
@@ -82,25 +81,29 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
                       widget.onUpdate(_selectedLevel);
                     },
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
+                      duration: const Duration(milliseconds: 160),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF4A9FFF) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: isSelected ? [
-                          BoxShadow(
-                            color: const Color(0xFF4A9FFF).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ] : null,
+                        color: isSelected
+                            ? AppColors.primaryBlue
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primaryBlue.withOpacity(0.35),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
                       ),
                       child: Text(
                         _levelNames[index],
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white : Colors.black87,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color:
+                              isSelected ? Colors.white : AppColors.textPrimary,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -113,12 +116,12 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
           const SizedBox(height: 32),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: const Color(0xFFE0E0E0),
-              inactiveTrackColor: const Color(0xFFE0E0E0),
+              activeTrackColor: AppColors.primaryBlue.withOpacity(0.14),
+              inactiveTrackColor: AppColors.textMuted.withOpacity(0.12),
               trackHeight: 6,
               thumbColor: Colors.white,
               thumbShape: const CustomThumbShape(),
-              overlayColor: const Color(0xFF4A9FFF).withOpacity(0.2),
+              overlayColor: AppColors.primaryBlue.withOpacity(0.16),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
             ),
             child: Slider(
@@ -126,6 +129,7 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
               min: 0,
               max: 2,
               divisions: 2,
+              activeColor: AppColors.primaryBlue,
               onChanged: (value) {
                 setState(() {
                   _selectedLevel = value.round();
@@ -137,9 +141,8 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
           const SizedBox(height: 24),
           Text(
             _levelDescriptions[_selectedLevel],
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[400],
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textMuted,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
@@ -150,13 +153,10 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
             child: ElevatedButton(
               onPressed: widget.onNext,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A9FFF),
-                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                elevation: 0,
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
