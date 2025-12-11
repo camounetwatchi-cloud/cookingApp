@@ -49,7 +49,7 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
           Text(
             'Ton niveau en\ncuisine',
             style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w900,
               height: 1.05,
             ),
             textAlign: TextAlign.center,
@@ -58,7 +58,7 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
           Text(
             'On adaptera les recettes à ton expérience',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textMuted,
+              color: AppColors.primaryBlue,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
@@ -102,8 +102,7 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
                         _levelNames[index],
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color:
-                              isSelected ? Colors.white : AppColors.textPrimary,
+                          color: AppColors.textPrimary,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -150,28 +149,67 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
           const Spacer(flex: 3),
           Padding(
             padding: const EdgeInsets.only(bottom: 32),
-            child: ElevatedButton(
-              onPressed: widget.onNext,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.play_arrow, size: 18),
-                  SizedBox(width: 6),
-                  Text(
-                    'Continuer',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: widget.onBack,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    side: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                ],
-              ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.arrow_back,
+                        size: 16,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Retour',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: widget.onNext,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.play_arrow, size: 18),
+                      SizedBox(width: 6),
+                      Text(
+                        'Continuer',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

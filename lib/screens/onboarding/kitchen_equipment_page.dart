@@ -63,7 +63,7 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
           Text(
             'Ton équipement\nde cuisine',
             style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w900,
               height: 1.05,
             ),
             textAlign: TextAlign.center,
@@ -73,9 +73,9 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
           
           // Subtitle
           Text(
-            'On évitera de te proposer une\nrecette au four si tu n’en as pas !',
+            "On évitera de te proposer une\nrecette au four si tu n'en as pas !",
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textMuted,
+              color: AppColors.primaryBlue,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
@@ -94,11 +94,26 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
                 final isSelected = _selectedEquipment.contains(item['name']);
                 return GestureDetector(
                   onTap: () => _toggleEquipment(item['name']!),
-                  child: GlassContainer(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    borderRadius: 22,
-                    backgroundOpacity: isSelected ? 0.5 : 0.26,
-                    strokeOpacity: isSelected ? 0.32 : 0.18,
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                      border: Border.all(
+                        color: isSelected ? AppColors.primaryBlue : AppColors.textMuted.withOpacity(0.2),
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primaryBlue.withOpacity(0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
                     child: Row(
                       children: [
                         Text(
@@ -110,7 +125,7 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
                           item['name']!,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ],
@@ -124,28 +139,67 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
           // Next button
           Padding(
             padding: const EdgeInsets.only(bottom: 32, top: 16),
-            child: ElevatedButton(
-              onPressed: widget.onNext,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.play_arrow, size: 18),
-                  SizedBox(width: 6),
-                  Text(
-                    'Continuer',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: widget.onBack,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    side: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                ],
-              ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.arrow_back,
+                        size: 16,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Retour',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: widget.onNext,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.play_arrow, size: 18),
+                      SizedBox(width: 6),
+                      Text(
+                        'Continuer',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

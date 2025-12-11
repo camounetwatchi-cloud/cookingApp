@@ -337,11 +337,11 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildMainButtons() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(height: 40),
         
-        // Greeting
+        // Greeting (centered)
         const Text(
           'Bonjour,',
           style: TextStyle(
@@ -381,9 +381,10 @@ class _LoginPageState extends State<LoginPage> {
           const SizedBox(height: 20),
         ],
 
-        // Button 1: Google
+        // Button 1: Google (logo on left)
         SizedBox(
           height: 56,
+          width: double.infinity,
           child: OutlinedButton(
             onPressed: _isGoogleLoading ? null : _signInWithGoogle,
             style: OutlinedButton.styleFrom(
@@ -394,6 +395,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               elevation: 0,
               backgroundColor: Colors.white,
+              padding: EdgeInsets.zero,
             ),
             child: _isGoogleLoading
                 ? const SizedBox(
@@ -401,20 +403,29 @@ class _LoginPageState extends State<LoginPage> {
                     width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                : Stack(
                     children: [
-                      Image.network(
-                        'https://www.google.com/favicon.ico',
-                        height: 20,
-                        width: 20,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.g_mobiledata, size: 20),
+                      // Logo on the left
+                      Positioned(
+                        left: 16,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: Image.network(
+                            'https://lh3.googleusercontent.com/a/default-user=s48-c',
+                            height: 20,
+                            width: 20,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.g_mobiledata, size: 20),
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Continuer avec Google',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                      // Text centered
+                      Center(
+                        child: const Text(
+                          'Continuer avec Google',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                        ),
                       ),
                     ],
                   ),
@@ -422,9 +433,10 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 16),
 
-        // Button 2: Apple
+        // Button 2: Apple (logo on left)
         SizedBox(
           height: 56,
+          width: double.infinity,
           child: OutlinedButton(
             onPressed: _isAppleLoading ? null : _signInWithApple,
             style: OutlinedButton.styleFrom(
@@ -435,6 +447,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               elevation: 0,
               backgroundColor: Colors.white,
+              padding: EdgeInsets.zero,
             ),
             child: _isAppleLoading
                 ? const SizedBox(
@@ -442,14 +455,29 @@ class _LoginPageState extends State<LoginPage> {
                     width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                : Stack(
                     children: [
-                      Icon(Icons.apple, size: 20),
-                      SizedBox(width: 12),
-                      Text(
-                        'Continuer avec Apple',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                      // Logo on the left
+                      Positioned(
+                        left: 16,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: Image.network(
+                            'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg',
+                            height: 20,
+                            width: 20,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.apple, size: 20),
+                          ),
+                        ),
+                      ),
+                      // Text centered
+                      Center(
+                        child: const Text(
+                          'Continuer avec Apple',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                        ),
                       ),
                     ],
                   ),
@@ -457,9 +485,10 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 16),
 
-        // Button 3: Email
+        // Button 3: Email (logo on left)
         SizedBox(
           height: 56,
+          width: double.infinity,
           child: OutlinedButton(
             onPressed: () {
               setState(() {
@@ -475,15 +504,35 @@ class _LoginPageState extends State<LoginPage> {
               ),
               elevation: 0,
               backgroundColor: Colors.white,
+              padding: EdgeInsets.zero,
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Stack(
               children: [
-                Icon(Icons.mail_outline, size: 20),
-                SizedBox(width: 12),
-                Text(
-                  'Continuer avec Email',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                // Logo on the left
+                Positioned(
+                  left: 16,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Image.network(
+                      'https://upload.wikimedia.org/wikipedia/fr/a/a7/Mail_%28Apple%29_logo.png',
+                      height: 20,
+                      width: 20,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(
+                            Icons.mail_outline,
+                            size: 20,
+                            color: Colors.black87,
+                          ),
+                    ),
+                  ),
+                ),
+                // Text centered
+                Center(
+                  child: const Text(
+                    'Continuer avec Email',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  ),
                 ),
               ],
             ),
@@ -934,7 +983,7 @@ class _FrigoPageState extends State<FrigoPage> {
                   )).toList(),
                 ),
                 const SizedBox(height: 20),
-              ),
+              ],
 
               Text(
                 'Ajouter manuellement',

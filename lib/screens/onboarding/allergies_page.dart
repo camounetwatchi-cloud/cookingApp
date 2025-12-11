@@ -67,7 +67,7 @@ class _AllergiesPageState extends State<AllergiesPage> {
           Text(
             'Tes allergies\nalimentaires',
             style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w900,
               height: 1.05,
             ),
             textAlign: TextAlign.center,
@@ -79,7 +79,7 @@ class _AllergiesPageState extends State<AllergiesPage> {
           Text(
             'Selectionne les aliments auxquels tu es allergique.\nOn les prendra en compte dans nos recettes.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textMuted,
+              color: AppColors.primaryBlue,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
@@ -103,11 +103,26 @@ class _AllergiesPageState extends State<AllergiesPage> {
                 final isSelected = _selectedAllergies.contains(allergy['name']);
                 return GestureDetector(
                   onTap: () => _toggleAllergy(allergy['name']),
-                  child: GlassContainer(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    borderRadius: 22,
-                    backgroundOpacity: isSelected ? 0.48 : 0.28,
-                    strokeOpacity: isSelected ? 0.32 : 0.18,
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                      border: Border.all(
+                        color: isSelected ? AppColors.primaryBlue : AppColors.textMuted.withOpacity(0.2),
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primaryBlue.withOpacity(0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
@@ -122,7 +137,7 @@ class _AllergiesPageState extends State<AllergiesPage> {
                             allergy['name'],
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: isSelected ? Colors.white : AppColors.textPrimary,
+                              color: AppColors.textPrimary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
