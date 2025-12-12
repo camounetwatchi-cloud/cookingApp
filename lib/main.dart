@@ -390,17 +390,15 @@ class _LoginPageState extends State<LoginPage> {
           child: Stack(
             children: [
               // Logo on the left
-              Positioned(
+                  Positioned(
                 left: 16,
                 top: 0,
                 bottom: 0,
                 child: Center(
-                  child: Image.network(
-                    'https://lh3.googleusercontent.com/a/default-user=s48-c',
+                  child: Image.asset(
+                    'assets/logo/google_icon.png',
                     height: 20,
                     width: 20,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.g_mobiledata, size: 20),
                   ),
                 ),
               ),
