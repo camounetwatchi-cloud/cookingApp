@@ -27,6 +27,7 @@ class DislikesPage extends StatefulWidget {
 
 class _DislikesPageState extends State<DislikesPage> {
   late int _spiceLevel;
+  late double _spiceSliderValue;
   late Set<String> _dislikedItems;
   late TextEditingController _searchController;
   
@@ -36,6 +37,7 @@ class _DislikesPageState extends State<DislikesPage> {
   void initState() {
     super.initState();
     _spiceLevel = widget.initialSpiceLevel;
+    _spiceSliderValue = _spiceLevel.toDouble();
     _dislikedItems = Set.from(widget.initialDislikedItems);
     _searchController = TextEditingController();
   }
@@ -105,6 +107,7 @@ class _DislikesPageState extends State<DislikesPage> {
                     onTap: () {
                       setState(() {
                         _spiceLevel = index;
+                        _spiceSliderValue = index.toDouble();
                       });
                       widget.onUpdateSpice(_spiceLevel);
                     },
@@ -134,16 +137,19 @@ class _DislikesPageState extends State<DislikesPage> {
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
             ),
             child: Slider(
-              value: _spiceLevel.toDouble(),
+              value: _spiceSliderValue,
               min: 0,
               max: 2,
-              divisions: 2,
               activeColor: AppColors.primaryBlue,
               onChanged: (value) {
                 setState(() {
-                  _spiceLevel = value.round();
+                  _spiceSliderValue = value;
+                  final newLevel = value.clamp(0, 2).round();
+                  if (newLevel != _spiceLevel) {
+                    _spiceLevel = newLevel;
+                    widget.onUpdateSpice(_spiceLevel);
+                  }
                 });
-                widget.onUpdateSpice(_spiceLevel);
               },
             ),
           ),

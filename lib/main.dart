@@ -1,19 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'firebase_options.dart';
 import 'models/food_preferences.dart';
-import 'screens/onboarding/onboarding_flow.dart';
-import 'ui/design_system.dart';
 import 'screens/home/scan_and_recipes.dart';
+import 'screens/onboarding/onboarding_flow.dart';
 import 'ui/design_system.dart';
 
 void main() async {
@@ -47,122 +47,78 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  bool? _hasCompletedOnboarding; // null = loading, true/false = loaded
-  String? _currentUserId;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  StreamSubscription<User?>? _authSubscription;
+  User? _currentUser;
+  FoodPreferences? _cachedPreferences;
+  bool? _hasCompletedOnboarding;
+
+  bool _showEmailForm = false;
+  bool _isLoginMode = true;
+  bool _isLoading = false;
+  bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
+  String? _errorMessage;
+  String? _firstName;
 
   @override
   void initState() {
     super.initState();
+    _authSubscription =
+        FirebaseAuth.instance.authStateChanges().listen(_handleAuthStateChange);
   }
-
-  Future<void> _checkOnboardingStatus(User user) async {
-    // Only check if user changed or we haven't loaded yet
-    if (_currentUserId == user.uid && _hasCompletedOnboarding != null) {
-      return;
-    }
-    
-    _currentUserId = user.uid;
-    
-    // Check SharedPreferences for this user
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'onboarding_completed_${user.uid}';
-    final completed = prefs.getBool(key) ?? false;
-    
-    if (mounted) {
-      setState(() {
-        _hasCompletedOnboarding = completed;
-      });
-    }
-  }
-
-  Future<void> _completeOnboarding() async {
-    if (_currentUserId == null) return;
-    
-    // Save to SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'onboarding_completed_$_currentUserId';
-    await prefs.setBool(key, true);
-    
-    if (mounted) {
-      setState(() {
-        _hasCompletedOnboarding = true;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        // Loading state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        
-        // User is logged in
-        if (snapshot.hasData && snapshot.data != null) {
-          final user = snapshot.data!;
-          
-          // Check onboarding status (async)
-          _checkOnboardingStatus(user);
-          
-          // Still loading onboarding status
-          if (_hasCompletedOnboarding == null) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          
-          // Show onboarding if not completed
-          if (!_hasCompletedOnboarding!) {
-            return OnboardingFlow(
-              onComplete: _completeOnboarding,
-              userId: user.uid,
-            );
-          }
-          
-          return FrigoPage(user: user);
-        }
-        
-        // User is not logged in - reset state
-        _currentUserId = null;
-        _hasCompletedOnboarding = null;
-        return const LoginPage();
-      },
-    );
-  }
-}
-
-// ==================== LOGIN PAGE ====================
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLoading = false;
-  bool _isGoogleLoading = false;
-  bool _isAppleLoading = false;
-  bool _showEmailForm = false; // true = show email form, false = show 3 main buttons
-  bool _isLoginMode = true; // true = login, false = register
-  String? _errorMessage;
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  // Google Sign-In
+  Future<void> _handleAuthStateChange(User? user) async {
+    if (!mounted) return;
+
+    setState(() {
+      _currentUser = user;
+      if (user == null) {
+        _hasCompletedOnboarding = false;
+        _cachedPreferences = null;
+      } else {
+        _hasCompletedOnboarding = null;
+      }
+    });
+
+    if (user == null) return;
+
+    final prefs = await FoodPreferences.loadForUser(user.uid);
+    if (!mounted) return;
+
+    setState(() {
+      _cachedPreferences = prefs;
+      _hasCompletedOnboarding = prefs != null;
+    });
+  }
+
+  void _handleOnboardingCompleted() {
+    final user = _currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _hasCompletedOnboarding = true;
+    });
+
+    FoodPreferences.loadForUser(user.uid).then((prefs) {
+      if (!mounted) return;
+      setState(() {
+        _cachedPreferences = prefs;
+      });
+    });
+  }
+
   Future<void> _signInWithGoogle() async {
     setState(() {
       _isGoogleLoading = true;
@@ -171,66 +127,40 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       if (kIsWeb) {
-        // Web: use popup when possible, but fallback to redirect when popup is blocked
-        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-        googleProvider.addScope('email');
-        googleProvider.addScope('profile');
-
-        try {
-          await FirebaseAuth.instance.signInWithPopup(googleProvider);
-        } on FirebaseAuthException catch (e) {
-          // Popup blocked or not supported — attempt redirect flow as fallback
-          debugPrint('signInWithPopup failed (${e.code}) - trying redirect: ${e.message}');
-          if (e.code == 'popup-blocked' || e.code == 'operation-not-supported-in-this-environment' || e.code == 'auth/operation-not-supported-in-this-environment') {
-            try {
-              await FirebaseAuth.instance.signInWithRedirect(googleProvider);
-              // After redirect the app will restart; nothing else to do here.
-              return;
-            } catch (redirectErr) {
-              debugPrint('signInWithRedirect also failed: $redirectErr');
-              rethrow;
-            }
-          }
-          rethrow; // other firebase errors -> handled by outer catch
-        }
+        final googleProvider = GoogleAuthProvider()..addScope('email');
+        await FirebaseAuth.instance.signInWithPopup(googleProvider);
       } else {
-        // Mobile: Use GoogleSignIn package
-        final GoogleSignIn googleSignIn = GoogleSignIn();
-        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-        
+        final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
         if (googleUser == null) {
-          // User cancelled
-          setState(() {
-            _isGoogleLoading = false;
-          });
           return;
         }
-
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
         final credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
         );
-        
         await FirebaseAuth.instance.signInWithCredential(credential);
       }
     } on FirebaseAuthException catch (e, st) {
-      debugPrint('FirebaseAuthException in _signInWithGoogle: ${e.code} ${e.message}');
+      debugPrint(
+          'FirebaseAuthException in _signInWithGoogle: ${e.code} ${e.message}');
       debugPrint('$st');
       setState(() {
         _errorMessage = _getErrorMessage(e.code);
       });
     } catch (e, st) {
-      // Unexpected error — log and show readable message
       debugPrint('Unexpected error in _signInWithGoogle: $e');
       debugPrint('$st');
       setState(() {
         _errorMessage = 'Erreur Google Sign-In: $e';
       });
     } finally {
-      setState(() {
-        _isGoogleLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
+        });
+      }
     }
   }
 
@@ -244,19 +174,16 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       if (_isLoginMode) {
-        // Login
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
       } else {
-        // Register
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
       }
-      // AuthWrapper will automatically redirect to FrigoPage
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = _getErrorMessage(e.code);
@@ -266,9 +193,11 @@ class _LoginPageState extends State<LoginPage> {
         _errorMessage = 'Une erreur est survenue: $e';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -291,7 +220,69 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Apple Sign-In (stub for now - would need AppleSignIn package)
+  bool get _hasFirstName =>
+      _firstName != null && _firstName!.trim().isNotEmpty;
+
+  String _formatFirstName(String input) {
+    final segments = input.trim().split(RegExp(r'\s+'));
+    return segments
+        .map((word) => word.isEmpty
+            ? ''
+            : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+        .join(' ')
+        .trim();
+  }
+
+  Future<void> _promptForFirstName() async {
+    final controller = TextEditingController(text: _firstName ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Text(
+            'Ton prénom',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          content: TextField(
+            controller: controller,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              hintText: 'Paul, Marie…',
+              border: OutlineInputBorder(),
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text('Valider'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+
+    if (result != null && result.trim().isNotEmpty) {
+      setState(() {
+        _firstName = _formatFirstName(result);
+      });
+    }
+  }
+
   Future<void> _signInWithApple() async {
     setState(() {
       _isAppleLoading = true;
@@ -299,8 +290,6 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // Apple Sign-In not fully implemented on web
-      // This is a placeholder for future implementation
       setState(() {
         _errorMessage = 'Apple Sign-In coming soon';
       });
@@ -309,14 +298,40 @@ class _LoginPageState extends State<LoginPage> {
         _errorMessage = 'Erreur Apple Sign-In: $e';
       });
     } finally {
-      setState(() {
-        _isAppleLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isAppleLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = _currentUser;
+
+    if (user == null) {
+      return _buildAuthScreen();
+    }
+
+    if (_hasCompletedOnboarding == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_hasCompletedOnboarding!) {
+      return FrigoPage(user: user);
+    }
+
+    return OnboardingFlow(
+      userId: user.uid,
+      existingPreferences: _cachedPreferences,
+      onComplete: _handleOnboardingCompleted,
+    );
+  }
+
+  Widget _buildAuthScreen() {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -325,7 +340,9 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.all(24.0),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
-              child: _showEmailForm ? _buildEmailForm() : _buildMainButtons(),
+              child: !_hasFirstName
+                  ? _buildWelcomeIntro()
+                  : (_showEmailForm ? _buildEmailForm() : _buildMainButtons()),
             ),
           ),
         ),
@@ -333,24 +350,86 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Main login screen with 3 buttons: Google, Apple, Email
+  Widget _buildWelcomeIntro() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const SizedBox(height: 60),
+        const Text(
+          'Bienvenue,',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            color: Colors.black,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Comment dois-je t’appeler ?',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[600],
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 32),
+        LiquidGlassButton(
+          onPressed: _promptForFirstName,
+          height: 54,
+          width: double.infinity,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.edit_outlined, size: 18, color: Colors.black87),
+              SizedBox(width: 10),
+              Text(
+                'Ajouter prénom',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Tu pourras le modifier plus tard.',
+          style: TextStyle(color: Colors.black54, fontSize: 13),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
   Widget _buildMainButtons() {
+    final greeting = _hasFirstName ? 'Bonjour ${_firstName!}' : 'Bonjour,';
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(height: 40),
-        
-        // Greeting (centered)
-        const Text(
-          'Bonjour,',
-          style: TextStyle(
+        Text(
+          greeting,
+          style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
           textAlign: TextAlign.center,
         ),
+        if (_hasFirstName)
+          TextButton(
+            onPressed: _promptForFirstName,
+            child: const Text(
+              'Modifier mon prénom',
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
         const SizedBox(height: 12),
         Text(
           'Connecte-toi pour sauvegarder tes préférences et tes recettes.',
@@ -362,8 +441,6 @@ class _LoginPageState extends State<LoginPage> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 48),
-
-        // Error message
         if (_errorMessage != null) ...[
           Container(
             padding: const EdgeInsets.all(12),
@@ -380,8 +457,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 20),
         ],
-
-        // Button 1: Google (logo on left)
         LiquidGlassButton(
           onPressed: _isGoogleLoading ? null : _signInWithGoogle,
           isLoading: _isGoogleLoading,
@@ -389,8 +464,7 @@ class _LoginPageState extends State<LoginPage> {
           width: double.infinity,
           child: Stack(
             children: [
-              // Logo on the left
-                  Positioned(
+              Positioned(
                 left: 16,
                 top: 0,
                 bottom: 0,
@@ -402,7 +476,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              // Text centered
               Center(
                 child: const Text(
                   'Continuer avec Google',
@@ -417,8 +490,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // Button 2: Apple (logo on left)
         LiquidGlassButton(
           onPressed: _isAppleLoading ? null : _signInWithApple,
           isLoading: _isAppleLoading,
@@ -426,7 +497,6 @@ class _LoginPageState extends State<LoginPage> {
           width: double.infinity,
           child: Stack(
             children: [
-              // Logo on the left
               Positioned(
                 left: 16,
                 top: 0,
@@ -441,7 +511,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              // Text centered
               Center(
                 child: const Text(
                   'Continuer avec Apple',
@@ -456,8 +525,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // Button 3: Email (logo on left)
         LiquidGlassButton(
           onPressed: () {
             setState(() {
@@ -469,7 +536,6 @@ class _LoginPageState extends State<LoginPage> {
           width: double.infinity,
           child: Stack(
             children: [
-              // Logo on the left
               Positioned(
                 left: 16,
                 top: 0,
@@ -488,7 +554,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              // Text centered
               Center(
                 child: const Text(
                   'Continuer avec Email',
@@ -506,7 +571,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Email login/register form
   Widget _buildEmailForm() {
     return Form(
       key: _formKey,
@@ -515,8 +579,6 @@ class _LoginPageState extends State<LoginPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 40),
-          
-          // Back button + Title
           Row(
             children: [
               GestureDetector(
@@ -545,8 +607,6 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
           const SizedBox(height: 32),
-
-          // Error message
           if (_errorMessage != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
@@ -563,8 +623,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 20),
           ],
-
-          // Email field
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
@@ -586,8 +644,6 @@ class _LoginPageState extends State<LoginPage> {
             },
           ),
           const SizedBox(height: 16),
-
-          // Password field
           TextFormField(
             controller: _passwordController,
             obscureText: true,
@@ -609,8 +665,6 @@ class _LoginPageState extends State<LoginPage> {
             },
           ),
           const SizedBox(height: 24),
-
-          // Submit button
           LiquidGlassButton(
             onPressed: _isLoading ? null : _submit,
             isLoading: _isLoading,
@@ -626,8 +680,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Toggle login/register
           TextButton(
             onPressed: () {
               setState(() {
@@ -647,7 +699,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
 // ==================== FRIGO PAGE ====================
 class FrigoPage extends StatefulWidget {
   final User user;
@@ -657,12 +708,16 @@ class FrigoPage extends StatefulWidget {
   State<FrigoPage> createState() => _FrigoPageState();
 }
 
+enum _MenuAction { preferences, logout }
+
 class _FrigoPageState extends State<FrigoPage> {
   final ImagePicker _picker = ImagePicker();
   bool _loading = false;
   List<String> _items = [];
   final TextEditingController _manualItemController = TextEditingController();
   final Set<String> _allItems = {}; // All items: detected + manually added
+  final LayerLink _menuLayerLink = LayerLink();
+  OverlayEntry? _menuOverlayEntry;
 
   // Backend URL: change to your deployed backend for production
   static const String backendUrl = 'http://localhost:8080/api/fridge';
@@ -762,6 +817,174 @@ class _FrigoPageState extends State<FrigoPage> {
   }
 
   @override
+  void dispose() {
+    _manualItemController.dispose();
+    _hideMenu();
+    super.dispose();
+  }
+
+  void _toggleMenu() {
+    if (_menuOverlayEntry != null) {
+      _hideMenu();
+    } else {
+      _showMenu();
+    }
+  }
+
+  void _showMenu() {
+    final overlay = Overlay.of(context);
+    if (overlay == null) return;
+
+    _menuOverlayEntry = OverlayEntry(
+      builder: (_) {
+        return Material(
+          color: Colors.transparent,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: _hideMenu,
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              CompositedTransformFollower(
+                link: _menuLayerLink,
+                offset: const Offset(-190, 48),
+                showWhenUnlinked: false,
+                child: Material(
+                  color: Colors.transparent,
+                  child: SizedBox(
+                    width: 230,
+                    child: _buildGlassMenu(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    overlay.insert(_menuOverlayEntry!);
+  }
+
+  void _hideMenu() {
+    _menuOverlayEntry?.remove();
+    _menuOverlayEntry = null;
+  }
+
+  Future<void> _handleMenuAction(_MenuAction action) async {
+    _hideMenu();
+
+    if (action == _MenuAction.logout) {
+      await _signOut();
+      return;
+    }
+
+    final existingPrefs = await FoodPreferences.loadForUser(widget.user.uid);
+    if (!mounted) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => OnboardingFlow(
+          userId: widget.user.uid,
+          existingPreferences: existingPrefs,
+          onComplete: () {
+            if (mounted) Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassMenu() {
+    final theme = Theme.of(context);
+    final email = widget.user.email ?? 'Utilisateur';
+
+    return GlassContainer(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      borderRadius: 32,
+      backgroundOpacity: 0.5,
+      strokeOpacity: 0.22,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFFFDEE5),
+                      Color(0xFFFFF5F7),
+                    ],
+                  ),
+                ),
+                child: const Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFFFF4D4D),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _userName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      email,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Divider(
+            height: 1,
+            color: Colors.white.withOpacity(0.4),
+          ),
+          const SizedBox(height: 10),
+          _MenuEntry(
+            icon: Icons.restaurant_menu_outlined,
+            label: 'Mes préférences alimentaires',
+            onTap: () => _handleMenuAction(_MenuAction.preferences),
+          ),
+          const SizedBox(height: 12),
+          Divider(
+            height: 1,
+            color: Colors.white.withOpacity(0.4),
+          ),
+          const SizedBox(height: 12),
+          _MenuEntry(
+            icon: Icons.logout,
+            label: 'Déconnexion',
+            iconColor: Colors.redAccent,
+            textColor: Colors.redAccent,
+            onTap: () => _handleMenuAction(_MenuAction.logout),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
@@ -770,58 +993,24 @@ class _FrigoPageState extends State<FrigoPage> {
         title: const Text('Cahier de cuisine'),
         centerTitle: true,
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.account_circle),
-            onSelected: (value) async {
-              if (value == 'logout') {
-                _signOut();
-              } else if (value == 'preferences') {
-                final existingPrefs = await FoodPreferences.loadForUser(widget.user.uid);
-                if (mounted) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => OnboardingFlow(
-                        userId: widget.user.uid,
-                        existingPreferences: existingPrefs,
-                        onComplete: () {
-                          if (mounted) Navigator.of(context).pop();
-                        },
-                      ),
-                    ),
-                  );
-                }
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                enabled: false,
-                child: Text(
-                  widget.user.email ?? 'Utilisateur',
-                  style: TextStyle(color: AppColors.textMuted),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: CompositedTransformTarget(
+              link: _menuLayerLink,
+              child: GestureDetector(
+                onTap: _toggleMenu,
+                child: GlassContainer(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  borderRadius: 18,
+                  backgroundOpacity: 0.35,
+                  strokeOpacity: 0.25,
+                  child: const Icon(
+                    Icons.menu_rounded,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
-              const PopupMenuDivider(),
-              const PopupMenuItem(
-                value: 'preferences',
-                child: Row(
-                  children: [
-                    Icon(Icons.restaurant_menu, color: AppColors.primaryBlue),
-                    SizedBox(width: 8),
-                    Text('Mes préférences alimentaires'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Déconnexion', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -949,10 +1138,10 @@ class _FrigoPageState extends State<FrigoPage> {
                 runSpacing: 10,
                 children: ['Viande', 'Poissons', 'Légumes', 'Fruits', 'Œufs', 'Produits laitiers', 'Pain', 'Pâtes']
                     .map((category) => _chip(
-                      label: category,
-                      onTap: () => setState(() => _allItems.add(category)),
-                      selected: false,
-                    ))
+                          label: category,
+                          onTap: () => setState(() => _allItems.add(category)),
+                          selected: _allItems.contains(category),
+                        ))
                     .toList(),
               ),
               const SizedBox(height: 14),
@@ -1035,31 +1224,141 @@ class _FrigoPageState extends State<FrigoPage> {
     );
   }
 
-  Widget _chip({required String label, VoidCallback? onTap, VoidCallback? onRemove, bool selected = false}) {
+  Widget _chip({
+    required String label,
+    VoidCallback? onTap,
+    VoidCallback? onRemove,
+    bool selected = false,
+  }) {
+    final blur = selected ? 26.0 : 16.0;
+    final borderColor =
+        selected ? Colors.white.withOpacity(0.7) : Colors.white.withOpacity(0.3);
+    final gradient = selected
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0F7CF6),
+              Color(0xFF0088FF),
+            ],
+          )
+        : const RadialGradient(
+            center: Alignment(-0.6, -1),
+            radius: 2.6,
+            colors: [
+              Color(0xFFF8FAFF),
+              Color(0xFFF2F4F8),
+              Color(0xFFFFFFFF),
+            ],
+            stops: [0.0, 0.55, 1.0],
+          );
+    final textColor = selected ? Colors.white : AppColors.textPrimary;
+    final boxShadow = selected
+        ? [
+            BoxShadow(
+              color: AppColors.primaryBlue.withOpacity(0.32),
+              blurRadius: 18,
+              spreadRadius: -8,
+              offset: const Offset(0, 10),
+            ),
+          ]
+        : AppShadows.liquidGlass;
+
     return GestureDetector(
       onTap: onTap ?? onRemove,
-      child: GlassContainer(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        borderRadius: 16,
-        backgroundOpacity: selected ? 0.52 : 0.26,
-        strokeOpacity: selected ? 0.32 : 0.18,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : AppColors.textPrimary,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: boxShadow,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                gradient: gradient,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: borderColor, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                  if (onRemove != null) ...[
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.close,
+                      size: 16,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (onRemove != null) ...[
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: onRemove,
-                child: const Icon(Icons.close, size: 16, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuEntry extends StatelessWidget {
+  const _MenuEntry({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.iconColor = AppColors.textPrimary,
+    this.textColor = AppColors.textPrimary,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color iconColor;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      splashColor: Colors.white.withOpacity(0.05),
+      highlightColor: Colors.white.withOpacity(0.08),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                ),
               ),
-            ],
+              child: Icon(icon, size: 20, color: iconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.textMuted),
           ],
         ),
       ),

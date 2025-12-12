@@ -21,11 +21,13 @@ class SkillLevelPage extends StatefulWidget {
 
 class _SkillLevelPageState extends State<SkillLevelPage> {
   late int _selectedLevel;
+  late double _sliderValue;
   
   @override
   void initState() {
     super.initState();
     _selectedLevel = widget.initialValue;
+    _sliderValue = _selectedLevel.toDouble();
   }
   
   final List<String> _levelNames = ['Debutant', 'Intermediaire', 'Avance'];
@@ -78,6 +80,7 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
                     onTap: () {
                       setState(() {
                         _selectedLevel = index;
+                        _sliderValue = index.toDouble();
                       });
                       widget.onUpdate(_selectedLevel);
                     },
@@ -108,16 +111,19 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
             ),
             child: Slider(
-              value: _selectedLevel.toDouble(),
+              value: _sliderValue,
               min: 0,
               max: 2,
-              divisions: 2,
               activeColor: AppColors.primaryBlue,
               onChanged: (value) {
                 setState(() {
-                  _selectedLevel = value.round();
+                  _sliderValue = value;
+                  final newLevel = value.clamp(0, 2).round();
+                  if (newLevel != _selectedLevel) {
+                    _selectedLevel = newLevel;
+                    widget.onUpdate(_selectedLevel);
+                  }
                 });
-                widget.onUpdate(_selectedLevel);
               },
             ),
           ),

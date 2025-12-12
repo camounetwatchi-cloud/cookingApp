@@ -189,54 +189,89 @@ class SelectableGlassButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Adaptive radius based on button dimensions for consistent visual effect
-        final minDimension = constraints.maxHeight > 0 ? constraints.maxHeight : 50.0;
+        final minDimension =
+            constraints.maxHeight > 0 ? constraints.maxHeight : 50.0;
         final adaptiveRadius = (minDimension / 20.0).clamp(1.0, 3.5);
-        
+        final blurSigma = isSelected ? 30.0 : 18.0;
+        final borderColor = isSelected
+            ? Colors.white.withOpacity(0.72)
+            : Colors.white.withOpacity(0.46);
+        final gradient = isSelected
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primaryBlue.withOpacity(0.98),
+                  const Color(0xFF0F7CF6),
+                ],
+              )
+            : RadialGradient(
+                center: const Alignment(-0.8, -1.0),
+                radius: adaptiveRadius,
+                colors: const [
+                  Color(0xFFF9FBFF),
+                  Color(0xFFF4F4F6),
+                  Color(0xFFFFFFFF),
+                ],
+                stops: const [0.0, 0.45, 1.0],
+              );
+
+        final boxShadows = isSelected
+            ? [
+                BoxShadow(
+                  color: AppColors.primaryBlue.withOpacity(0.32),
+                  blurRadius: 24,
+                  spreadRadius: -6,
+                  offset: const Offset(0, 14),
+                ),
+                const BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 6),
+                  spreadRadius: -6,
+                ),
+              ]
+            : AppShadows.liquidGlass;
+
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(borderRadius),
-            boxShadow: AppShadows.liquidGlass,
-            gradient: isSelected
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primaryBlue.withOpacity(0.9),
-                      AppColors.primaryBlue.withOpacity(0.8),
-                    ],
-                  )
-                : RadialGradient(
-                    center: const Alignment(-1.0, -1.0), // top-left corner
-                    radius: adaptiveRadius,
-                    colors: const [
-                      Color(0xFFF2F2F2), // subtle gray at top-left corner
-                      Color(0xFFF8F8F8), // light transition
-                      Color(0xFFFFFFFF), // pure white
-                      Color(0xFFFFFFFF), // pure white majority
-                    ],
-                    stops: const [0.0, 0.35, 0.65, 1.0],
+            boxShadow: boxShadows,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: blurSigma,
+                sigmaY: blurSigma,
+              ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  gradient: gradient,
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  border: Border.all(
+                    color: borderColor,
+                    width: 1.2,
                   ),
-            border: Border.all(
-              color: const Color(0x52FFFFFF), // rgba(255, 255, 255, 0.32)
-              width: 1,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onTap,
+                    splashColor: Colors.white.withOpacity(0.08),
+                    highlightColor: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(borderRadius),
+                    child: Padding(
+                      padding: padding,
+                      child: Center(child: child),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-          child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: InkWell(
-          onTap: onTap,
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          overlayColor: MaterialStateProperty.all(Colors.transparent),
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: Container(
-            padding: padding,
-            child: child,
-          ),
-        ),
-      ),
         );
       },
     );
@@ -347,4 +382,3 @@ class AppTheme {
     return base;
   }
 }
-
