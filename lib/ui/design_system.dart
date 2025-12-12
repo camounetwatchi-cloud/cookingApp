@@ -60,6 +60,9 @@ class LiquidGlassButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Adaptive radius based on button height for consistent visual effect
+    final adaptiveRadius = (height / 40.0).clamp(1.0, 2.0);
+    
     return Container(
       height: height,
       width: width,
@@ -75,16 +78,16 @@ class LiquidGlassButton extends StatelessWidget {
                   AppColors.primaryBlue.withOpacity(0.8),
                 ],
               )
-            : const RadialGradient(
-                center: Alignment(-1.0, -1.0), // top-left corner
-                radius: 1.4,
-                colors: [
+            : RadialGradient(
+                center: const Alignment(-1.0, -1.0), // top-left corner
+                radius: adaptiveRadius,
+                colors: const [
                   Color(0xFFF2F2F2), // subtle gray at top-left corner
                   Color(0xFFF8F8F8), // light transition
                   Color(0xFFFFFFFF), // pure white
                   Color(0xFFFFFFFF), // pure white majority
                 ],
-                stops: [0.0, 0.35, 0.65, 1.0],
+                stops: const [0.0, 0.35, 0.65, 1.0],
               ),
         border: Border.all(
           color: const Color(0x52FFFFFF), // rgba(255, 255, 255, 0.32)
@@ -184,36 +187,42 @@ class SelectableGlassButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: AppShadows.liquidGlass,
-        gradient: isSelected
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primaryBlue.withOpacity(0.9),
-                  AppColors.primaryBlue.withOpacity(0.8),
-                ],
-              )
-            : const RadialGradient(
-                center: Alignment(-1.0, -1.0), // top-left corner
-                radius: 2.5,
-                colors: [
-                  Color(0xFFF2F2F2), // subtle gray at top-left corner
-                  Color(0xFFF8F8F8), // light transition
-                  Color(0xFFFFFFFF), // pure white
-                  Color(0xFFFFFFFF), // pure white majority
-                ],
-                stops: [0.0, 0.35, 0.65, 1.0],
-              ),
-        border: Border.all(
-          color: const Color(0x52FFFFFF), // rgba(255, 255, 255, 0.32)
-          width: 1,
-        ),
-      ),
-      child: Material(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Adaptive radius based on button dimensions for consistent visual effect
+        final minDimension = constraints.maxHeight > 0 ? constraints.maxHeight : 50.0;
+        final adaptiveRadius = (minDimension / 20.0).clamp(1.0, 3.5);
+        
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(borderRadius),
+            boxShadow: AppShadows.liquidGlass,
+            gradient: isSelected
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primaryBlue.withOpacity(0.9),
+                      AppColors.primaryBlue.withOpacity(0.8),
+                    ],
+                  )
+                : RadialGradient(
+                    center: const Alignment(-1.0, -1.0), // top-left corner
+                    radius: adaptiveRadius,
+                    colors: const [
+                      Color(0xFFF2F2F2), // subtle gray at top-left corner
+                      Color(0xFFF8F8F8), // light transition
+                      Color(0xFFFFFFFF), // pure white
+                      Color(0xFFFFFFFF), // pure white majority
+                    ],
+                    stops: const [0.0, 0.35, 0.65, 1.0],
+                  ),
+            border: Border.all(
+              color: const Color(0x52FFFFFF), // rgba(255, 255, 255, 0.32)
+              width: 1,
+            ),
+          ),
+          child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(borderRadius),
         child: InkWell(
@@ -228,6 +237,8 @@ class SelectableGlassButton extends StatelessWidget {
           ),
         ),
       ),
+        );
+      },
     );
   }
 }
