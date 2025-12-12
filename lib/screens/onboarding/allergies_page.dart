@@ -101,49 +101,30 @@ class _AllergiesPageState extends State<AllergiesPage> {
               itemBuilder: (context, index) {
                 final allergy = _allergies[index];
                 final isSelected = _selectedAllergies.contains(allergy['name']);
-                return GestureDetector(
+                return SelectableGlassButton(
+                  isSelected: isSelected,
                   onTap: () => _toggleAllergy(allergy['name']),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 160),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primaryBlue : Colors.transparent,
-                      border: Border.all(
-                        color: isSelected ? AppColors.primaryBlue : AppColors.textMuted.withOpacity(0.2),
-                        width: 1.5,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        allergy['icon'],
+                        style: const TextStyle(fontSize: 16),
                       ),
-                      borderRadius: BorderRadius.circular(22),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: AppColors.primaryBlue.withOpacity(0.25),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          allergy['icon'],
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            allergy['name'],
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          allergy['name'],
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -153,24 +134,21 @@ class _AllergiesPageState extends State<AllergiesPage> {
           // Next button - uses theme primary
           Padding(
             padding: const EdgeInsets.only(bottom: 32, top: 16),
-            child: ElevatedButton(
+              child: LiquidGlassButton(
               onPressed: widget.onNext,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
+              height: 64,
+              isBlue: true,
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.play_arrow, size: 18),
+                  Icon(Icons.play_arrow, size: 18, color: Colors.white),
                   SizedBox(width: 6),
                   Text(
                     'Continuer',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                 ],

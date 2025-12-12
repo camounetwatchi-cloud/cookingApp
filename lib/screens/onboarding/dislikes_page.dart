@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import '../../ui/design_system.dart';
 
@@ -89,51 +91,36 @@ class _DislikesPageState extends State<DislikesPage> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          GlassContainer(
-            padding: const EdgeInsets.all(4),
-            borderRadius: 26,
-            backgroundOpacity: 0.32,
-            strokeOpacity: 0.18,
-            child: Row(
-              children: List.generate(3, (index) {
-                final isSelected = _spiceLevel == index;
-                return Expanded(
-                  child: GestureDetector(
+          Row(
+            children: List.generate(3, (index) {
+              final isSelected = _spiceLevel == index;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: index == 0 ? 0 : 6,
+                    right: index == 2 ? 0 : 6,
+                  ),
+                  child: SelectableGlassButton(
+                    isSelected: isSelected,
                     onTap: () {
                       setState(() {
                         _spiceLevel = index;
                       });
                       widget.onUpdateSpice(_spiceLevel);
                     },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primaryBlue : Colors.transparent,
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.primaryBlue.withOpacity(0.35),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : null,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Text(
+                      _spiceLevels[index],
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
-                      child: Text(
-                        _spiceLevels[index],
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                );
-              }),
-            ),
+                ),
+              );
+            }),
           ),
           const SizedBox(height: 20),
           SliderTheme(
@@ -225,67 +212,62 @@ class _DislikesPageState extends State<DislikesPage> {
           const Spacer(flex: 2),
           Padding(
             padding: const EdgeInsets.only(bottom: 32),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: widget.onBack,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    side: BorderSide(
-                      color: Theme.of(context).primaryColor,
-                      width: 1.5,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.arrow_back,
-                        size: 16,
-                        color: Theme.of(context).primaryColor,
+            child: SizedBox(
+              height: 72,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: LiquidGlassButton(
+                      onPressed: widget.onBack,
+                      height: 44,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.arrow_back,
+                            size: 16,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Retour',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Retour',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: widget.onNext,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
                     ),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.play_arrow, size: 18),
-                      SizedBox(width: 6),
-                      Text(
-                        'Continuer',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  Align(
+                    alignment: Alignment.center,
+                    child: LiquidGlassButton(
+                      onPressed: widget.onNext,
+                      height: 64,
+                      isBlue: true,
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.play_arrow, size: 18, color: Colors.white),
+                          SizedBox(width: 6),
+                          Text(
+                            'Continuer',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

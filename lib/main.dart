@@ -382,160 +382,126 @@ class _LoginPageState extends State<LoginPage> {
         ],
 
         // Button 1: Google (logo on left)
-        SizedBox(
+        LiquidGlassButton(
+          onPressed: _isGoogleLoading ? null : _signInWithGoogle,
+          isLoading: _isGoogleLoading,
           height: 56,
           width: double.infinity,
-          child: OutlinedButton(
-            onPressed: _isGoogleLoading ? null : _signInWithGoogle,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.black87,
-              side: BorderSide(color: Colors.grey[300]!),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-              backgroundColor: Colors.white,
-              padding: EdgeInsets.zero,
-            ),
-            child: _isGoogleLoading
-                ? const SizedBox(
+          child: Stack(
+            children: [
+              // Logo on the left
+              Positioned(
+                left: 16,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Image.network(
+                    'https://lh3.googleusercontent.com/a/default-user=s48-c',
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Stack(
-                    children: [
-                      // Logo on the left
-                      Positioned(
-                        left: 16,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(
-                          child: Image.network(
-                            'https://lh3.googleusercontent.com/a/default-user=s48-c',
-                            height: 20,
-                            width: 20,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.g_mobiledata, size: 20),
-                          ),
-                        ),
-                      ),
-                      // Text centered
-                      Center(
-                        child: const Text(
-                          'Continuer avec Google',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                    ],
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.g_mobiledata, size: 20),
                   ),
+                ),
+              ),
+              // Text centered
+              Center(
+                child: const Text(
+                  'Continuer avec Google',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
 
         // Button 2: Apple (logo on left)
-        SizedBox(
+        LiquidGlassButton(
+          onPressed: _isAppleLoading ? null : _signInWithApple,
+          isLoading: _isAppleLoading,
           height: 56,
           width: double.infinity,
-          child: OutlinedButton(
-            onPressed: _isAppleLoading ? null : _signInWithApple,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.black87,
-              side: BorderSide(color: Colors.grey[300]!),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-              backgroundColor: Colors.white,
-              padding: EdgeInsets.zero,
-            ),
-            child: _isAppleLoading
-                ? const SizedBox(
+          child: Stack(
+            children: [
+              // Logo on the left
+              Positioned(
+                left: 16,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Image.network(
+                    'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg',
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Stack(
-                    children: [
-                      // Logo on the left
-                      Positioned(
-                        left: 16,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(
-                          child: Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg',
-                            height: 20,
-                            width: 20,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.apple, size: 20),
-                          ),
-                        ),
-                      ),
-                      // Text centered
-                      Center(
-                        child: const Text(
-                          'Continuer avec Apple',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                    ],
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.apple, size: 20),
                   ),
+                ),
+              ),
+              // Text centered
+              Center(
+                child: const Text(
+                  'Continuer avec Apple',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
 
         // Button 3: Email (logo on left)
-        SizedBox(
+        LiquidGlassButton(
+          onPressed: () {
+            setState(() {
+              _showEmailForm = true;
+              _errorMessage = null;
+            });
+          },
           height: 56,
           width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () {
-              setState(() {
-                _showEmailForm = true;
-                _errorMessage = null;
-              });
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.black87,
-              side: BorderSide(color: Colors.grey[300]!),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            children: [
+              // Logo on the left
+              Positioned(
+                left: 16,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Image.network(
+                    'https://upload.wikimedia.org/wikipedia/fr/a/a7/Mail_%28Apple%29_logo.png',
+                    height: 20,
+                    width: 20,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(
+                          Icons.mail_outline,
+                          size: 20,
+                          color: Colors.black87,
+                        ),
+                  ),
+                ),
               ),
-              elevation: 0,
-              backgroundColor: Colors.white,
-              padding: EdgeInsets.zero,
-            ),
-            child: Stack(
-              children: [
-                // Logo on the left
-                Positioned(
-                  left: 16,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: Image.network(
-                      'https://upload.wikimedia.org/wikipedia/fr/a/a7/Mail_%28Apple%29_logo.png',
-                      height: 20,
-                      width: 20,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Icon(
-                            Icons.mail_outline,
-                            size: 20,
-                            color: Colors.black87,
-                          ),
-                    ),
+              // Text centered
+              Center(
+                child: const Text(
+                  'Continuer avec Email',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
                   ),
                 ),
-                // Text centered
-                Center(
-                  child: const Text(
-                    'Continuer avec Email',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],
@@ -647,30 +613,18 @@ class _LoginPageState extends State<LoginPage> {
           const SizedBox(height: 24),
 
           // Submit button
-          SizedBox(
+          LiquidGlassButton(
+            onPressed: _isLoading ? null : _submit,
+            isLoading: _isLoading,
             height: 50,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A9FFF),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+            width: double.infinity,
+            child: Text(
+              _isLoginMode ? 'Se connecter' : 'Créer un compte',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                      ),
-                    )
-                  : Text(
-                      _isLoginMode ? 'Se connecter' : 'Créer un compte',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
             ),
           ),
           const SizedBox(height: 16),

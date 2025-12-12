@@ -28,9 +28,92 @@ class AppShadows {
       spreadRadius: 0,
     ),
   ];
+
+  static const List<BoxShadow> liquidGlass = [
+    BoxShadow(
+      color: Color(0x1A000000), // 10% black - adouci
+      blurRadius: 20,
+      offset: Offset(0, 8),
+      spreadRadius: 0,
+    ),
+  ];
 }
 
-/// Simple glassmorphism container for the Apple-like “liquid glass” effect.
+/// Liquid Glass Button - Modern glassmorphism button with advanced shadow effects
+class LiquidGlassButton extends StatelessWidget {
+  const LiquidGlassButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.isLoading = false,
+    this.height = 56,
+    this.width,
+    this.isBlue = false,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+  final bool isLoading;
+  final double height;
+  final double? width;
+  final bool isBlue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      width: width,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(34),
+        boxShadow: AppShadows.liquidGlass,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isBlue
+              ? [
+                  AppColors.primaryBlue.withOpacity(0.9),
+                  AppColors.primaryBlue.withOpacity(0.8),
+                ]
+              : const [
+                  Color(0xB3FAFAFA), // rgba(250, 250, 250, 0.7)
+                  Color(0x99FAFAFA), // rgba(250, 250, 250, 0.6)
+                ],
+        ),
+        border: Border.all(
+          color: const Color(0x52FFFFFF), // rgba(255, 255, 255, 0.32)
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(34),
+        child: InkWell(
+          onTap: isLoading ? null : onPressed,
+          borderRadius: BorderRadius.circular(34),
+          child: Container(
+            height: height,
+            width: width,
+            alignment: Alignment.center,
+            child: isLoading
+                ? SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isBlue ? Colors.white : AppColors.primaryBlue,
+                      ),
+                    ),
+                  )
+                : child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Simple glassmorphism container for the Apple-like "liquid glass" effect.
 class GlassContainer extends StatelessWidget {
   const GlassContainer({
     super.key,
@@ -64,6 +147,63 @@ class GlassContainer extends StatelessWidget {
               color: AppColors.surface.withOpacity(strokeOpacity),
             ),
             boxShadow: AppShadows.glass,
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Selectable Glass Button - Glassmorphism button for onboarding selections
+class SelectableGlassButton extends StatelessWidget {
+  const SelectableGlassButton({
+    super.key,
+    required this.isSelected,
+    required this.onTap,
+    required this.child,
+    this.padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+    this.borderRadius = 22,
+  });
+
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Widget child;
+  final EdgeInsets padding;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(borderRadius),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0x66FFFFFF),
+                Color(0x4DFFFFFF),
+              ],
+            ),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryBlue : const Color(0x4DFFFFFF),
+              width: isSelected ? 2 : 1,
+            ),
+            color: isSelected ? AppColors.primaryBlue.withOpacity(0.15) : Colors.transparent,
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0D000000), // 5% black - plus adouci
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: child,
         ),
