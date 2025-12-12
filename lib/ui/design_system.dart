@@ -278,6 +278,143 @@ class SelectableGlassButton extends StatelessWidget {
   }
 }
 
+/// Floating navigation bar for onboarding screens with glass buttons.
+class OnboardingNavBar extends StatelessWidget {
+  const OnboardingNavBar({
+    super.key,
+    required this.onNext,
+    this.onBack,
+    this.nextLabel = 'Continuer',
+    this.nextIcon = Icons.play_arrow_rounded,
+  });
+
+  final VoidCallback onNext;
+  final VoidCallback? onBack;
+  final String nextLabel;
+  final IconData nextIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasBack = onBack != null;
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (hasBack) _GlassSecondaryButton(onPressed: onBack!),
+            if (hasBack) const SizedBox(width: 16),
+            Expanded(
+              child: Align(
+                alignment: hasBack ? Alignment.centerRight : Alignment.center,
+                child: _GlassPrimaryButton(
+                  label: nextLabel,
+                  icon: nextIcon,
+                  onPressed: onNext,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassPrimaryButton extends StatelessWidget {
+  const _GlassPrimaryButton({
+    required this.onPressed,
+    required this.label,
+    required this.icon,
+  });
+
+  final VoidCallback onPressed;
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      padding: EdgeInsets.zero,
+      borderRadius: 32,
+      backgroundOpacity: 0.38,
+      strokeOpacity: 0.22,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(32),
+          onTap: onPressed,
+          splashColor: Colors.white.withOpacity(0.05),
+          highlightColor: Colors.white.withOpacity(0.08),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 20, color: AppColors.primaryBlue),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassSecondaryButton extends StatelessWidget {
+  const _GlassSecondaryButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      padding: EdgeInsets.zero,
+      borderRadius: 22,
+      backgroundOpacity: 0.28,
+      strokeOpacity: 0.22,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onPressed,
+          splashColor: Colors.white.withOpacity(0.05),
+          highlightColor: Colors.white.withOpacity(0.1),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.arrow_back_ios_new_rounded,
+                    size: 16, color: AppColors.primaryBlue),
+                SizedBox(width: 6),
+                Text(
+                  'Retour',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Centralized light theme using Inter and the Apple-like palette.
 class AppTheme {
   AppTheme._();

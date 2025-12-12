@@ -54,143 +54,94 @@ class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 28),
-          
-          // Title
-          Text(
-            'Tes cuisines\npréférées',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w900,
-              height: 1.05,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Subtitle
-          Text(
-            'Choisis les styles de cuisine que tu aimes le plus.\nOn s’en inspirera !',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.primaryBlue,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          const SizedBox(height: 32),
-          
-          // Cuisines grid - 2 columns
-          Expanded(
-            child: GridView.builder(
-              padding: EdgeInsets.zero,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 2.6,
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 28),
+              
+              // Title
+              Text(
+                'Tes cuisines\npréférées',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  height: 1.05,
+                ),
+                textAlign: TextAlign.center,
               ),
-              itemCount: _cuisines.length,
-              itemBuilder: (context, index) {
-                final cuisine = _cuisines[index];
-                final isSelected = _selectedCuisines.contains(cuisine['name']);
-                return SelectableGlassButton(
-                  isSelected: isSelected,
-                  onTap: () => _toggleCuisine(cuisine['name']!),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        cuisine['icon']!,
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          cuisine['name']!,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: isSelected ? Colors.white : AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
+              
+              const SizedBox(height: 12),
+              
+              // Subtitle
+              Text(
+                'Choisis les styles de cuisine que tu aimes le plus.\nOn s’en inspirera !',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.primaryBlue,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Cuisines grid - 2 columns
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.only(bottom: 160),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 2.6,
                   ),
-                );
-              },
-            ),
-          ),
-          
-          // Next button
-          Padding(
-            padding: const EdgeInsets.only(bottom: 32, top: 12),
-            child: SizedBox(
-              height: 72,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: LiquidGlassButton(
-                      onPressed: widget.onBack,
-                      height: 44,
+                  itemCount: _cuisines.length,
+                  itemBuilder: (context, index) {
+                    final cuisine = _cuisines[index];
+                    final isSelected = _selectedCuisines.contains(cuisine['name']);
+                    return SelectableGlassButton(
+                      isSelected: isSelected,
+                      onTap: () => _toggleCuisine(cuisine['name']!),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.arrow_back,
-                            size: 16,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(width: 4),
                           Text(
-                            'Retour',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).primaryColor,
+                            cuisine['icon']!,
+                            style: const TextStyle(fontSize: 18),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              cuisine['name']!,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isSelected ? Colors.white : AppColors.textPrimary,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.center,
-                    child: LiquidGlassButton(
-                      onPressed: widget.onNext,
-                      height: 64,
-                      isBlue: true,
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.play_arrow, size: 18, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text(
-                            'Continuer',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                    );
+                  },
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: OnboardingNavBar(
+            onNext: widget.onNext,
+            onBack: widget.onBack,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -49,118 +49,68 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 28),
-          
-          // Title
-          Center(
-            child: Text(
-              'Tes basiques\ndu placard',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-                height: 1.05,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Subtitle
-          Center(
-            child: Text(
-              'Coche ce que tu as presque toujours chez toi.\nOn les utilisera dans les recettes',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.primaryBlue,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          
-          const SizedBox(height: 28),
-          
-          // Scrollable content with categories
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _categories.entries.map((entry) {
-                  return _buildCategory(entry.key, entry.value, theme);
-                }).toList(),
-              ),
-            ),
-          ),
-          
-          // Next button
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 32, top: 16),
-              child: SizedBox(
-                height: 72,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: LiquidGlassButton(
-                        onPressed: widget.onBack,
-                        height: 44,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.arrow_back,
-                              size: 16,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Retour',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.center,
-                      child: LiquidGlassButton(
-                        onPressed: widget.onNext,
-                        height: 64,
-                        isBlue: true,
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.play_arrow, size: 18, color: Colors.white),
-                            SizedBox(width: 6),
-                            Text(
-                              'Continuer',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 28),
+              
+              // Title
+              Center(
+                child: Text(
+                  'Tes basiques\ndu placard',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    height: 1.05,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-            ),
+              
+              const SizedBox(height: 12),
+              
+              // Subtitle
+              Center(
+                child: Text(
+                  'Coche ce que tu as presque toujours chez toi.\nOn les utilisera dans les recettes',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.primaryBlue,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
+              const SizedBox(height: 28),
+              
+              // Scrollable content with categories
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 160),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _categories.entries.map((entry) {
+                      return _buildCategory(entry.key, entry.value, theme);
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: OnboardingNavBar(
+            onNext: widget.onNext,
+            onBack: widget.onBack,
+          ),
+        ),
+      ],
     );
   }
 

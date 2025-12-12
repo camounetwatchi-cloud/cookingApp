@@ -69,215 +69,169 @@ class _DislikesPageState extends State<DislikesPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 28),
-          Text(
-            "Dernière étape !\nCe que tu n'aimes pas",
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w900,
-              height: 1.05,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'On personnalisera tes recettes\nselon tes goûts',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.primaryBlue,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: List.generate(3, (index) {
-              final isSelected = _spiceLevel == index;
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: index == 0 ? 0 : 6,
-                    right: index == 2 ? 0 : 6,
-                  ),
-                  child: SelectableGlassButton(
-                    isSelected: isSelected,
-                    onTap: () {
-                      setState(() {
-                        _spiceLevel = index;
-                        _spiceSliderValue = index.toDouble();
-                      });
-                      widget.onUpdateSpice(_spiceLevel);
-                    },
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Text(
-                      _spiceLevels[index],
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white : AppColors.textPrimary,
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 28),
+              Text(
+                "Dernière étape !\nCe que tu n'aimes pas",
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  height: 1.05,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'On personnalisera tes recettes\nselon tes goûts',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.primaryBlue,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: List.generate(3, (index) {
+                  final isSelected = _spiceLevel == index;
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: index == 0 ? 0 : 6,
+                        right: index == 2 ? 0 : 6,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 20),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppColors.primaryBlue.withOpacity(0.14),
-              inactiveTrackColor: AppColors.textMuted.withOpacity(0.12),
-              trackHeight: 6,
-              thumbColor: Colors.white,
-              thumbShape: const CustomThumbShape(),
-              overlayColor: AppColors.primaryBlue.withOpacity(0.16),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
-            ),
-            child: Slider(
-              value: _spiceSliderValue,
-              min: 0,
-              max: 2,
-              activeColor: AppColors.primaryBlue,
-              onChanged: (value) {
-                setState(() {
-                  _spiceSliderValue = value;
-                  final newLevel = value.clamp(0, 2).round();
-                  if (newLevel != _spiceLevel) {
-                    _spiceLevel = newLevel;
-                    widget.onUpdateSpice(_spiceLevel);
-                  }
-                });
-              },
-            ),
-          ),
-          const Spacer(),
-          Text(
-            'Si tu veux indique simplement ce\nque tu n’aimes pas',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.primaryBlue,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 14),
-          GlassContainer(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            borderRadius: 18,
-            backgroundOpacity: 0.28,
-            strokeOpacity: 0.2,
-            child: Row(
-              children: [
-                Icon(Icons.search, color: AppColors.textMuted, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Ajoute un ingrédient',
-                      hintStyle: TextStyle(color: AppColors.textMuted),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    onSubmitted: _addDislike,
-                  ),
-                ),
-                Icon(Icons.mic, color: AppColors.textMuted, size: 20),
-              ],
-            ),
-          ),
-          if (_dislikedItems.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 14),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _dislikedItems.map((item) {
-                  return GlassContainer(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    borderRadius: 16,
-                    backgroundOpacity: 0.22,
-                    strokeOpacity: 0.18,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(item, style: theme.textTheme.bodyMedium),
-                        const SizedBox(width: 6),
-                        GestureDetector(
-                          onTap: () => _removeDislike(item),
-                          child: Icon(Icons.close, size: 16, color: AppColors.textMuted),
+                      child: SelectableGlassButton(
+                        isSelected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            _spiceLevel = index;
+                            _spiceSliderValue = index.toDouble();
+                          });
+                          widget.onUpdateSpice(_spiceLevel);
+                        },
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Text(
+                          _spiceLevels[index],
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                      ],
+                      ),
                     ),
                   );
-                }).toList(),
+                }),
               ),
-            ),
-          const Spacer(flex: 2),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 32),
-            child: SizedBox(
-              height: 72,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: LiquidGlassButton(
-                      onPressed: widget.onBack,
-                      height: 44,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.arrow_back,
-                            size: 16,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Retour',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ],
+              const SizedBox(height: 20),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: AppColors.primaryBlue.withOpacity(0.14),
+                  inactiveTrackColor: AppColors.textMuted.withOpacity(0.12),
+                  trackHeight: 6,
+                  thumbColor: Colors.white,
+                  thumbShape: const CustomThumbShape(),
+                  overlayColor: AppColors.primaryBlue.withOpacity(0.16),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+                ),
+                child: Slider(
+                  value: _spiceSliderValue,
+                  min: 0,
+                  max: 2,
+                  activeColor: AppColors.primaryBlue,
+                  onChanged: (value) {
+                    setState(() {
+                      _spiceSliderValue = value;
+                      final newLevel = value.clamp(0, 2).round();
+                      if (newLevel != _spiceLevel) {
+                        _spiceLevel = newLevel;
+                        widget.onUpdateSpice(_spiceLevel);
+                      }
+                    });
+                  },
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'Si tu veux indique simplement ce\nque tu n’aimes pas',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.primaryBlue,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 14),
+              GlassContainer(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                borderRadius: 18,
+                backgroundOpacity: 0.28,
+                strokeOpacity: 0.2,
+                child: Row(
+                  children: [
+                    Icon(Icons.search, color: AppColors.textMuted, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Ajoute un ingrédient',
+                          hintStyle: TextStyle(color: AppColors.textMuted),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onSubmitted: _addDislike,
                       ),
                     ),
-                  ),
-                  Align(
-                    alignment: Alignment.center,
-                    child: LiquidGlassButton(
-                      onPressed: widget.onNext,
-                      height: 64,
-                      isBlue: true,
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.play_arrow, size: 18, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text(
-                            'Continuer',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                    Icon(Icons.mic, color: AppColors.textMuted, size: 20),
+                  ],
+                ),
               ),
-            ),
+              if (_dislikedItems.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _dislikedItems.map((item) {
+                      return GlassContainer(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        borderRadius: 16,
+                        backgroundOpacity: 0.22,
+                        strokeOpacity: 0.18,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(item, style: theme.textTheme.bodyMedium),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => _removeDislike(item),
+                              child: Icon(Icons.close, size: 16, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              const Spacer(flex: 2),
+              const SizedBox(height: 140),
+            ],
           ),
-        ],
-      ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: OnboardingNavBar(
+            onNext: widget.onNext,
+            onBack: widget.onBack,
+          ),
+        ),
+      ],
     );
   }
 }

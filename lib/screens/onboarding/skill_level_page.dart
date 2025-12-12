@@ -42,163 +42,116 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 28),
-          Text(
-            'Ton niveau en\ncuisine',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w900,
-              height: 1.05,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'On adaptera les recettes à ton expérience',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.primaryBlue,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const Spacer(flex: 2),
-          Row(
-            children: List.generate(3, (index) {
-              final isSelected = _selectedLevel == index;
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: index == 0 ? 0 : 6,
-                    right: index == 2 ? 0 : 6,
-                  ),
-                  child: SelectableGlassButton(
-                    isSelected: isSelected,
-                    onTap: () {
-                      setState(() {
-                        _selectedLevel = index;
-                        _sliderValue = index.toDouble();
-                      });
-                      widget.onUpdate(_selectedLevel);
-                    },
-                    // Use same internal padding & text weight as allergies buttons
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    child: Text(
-                      _levelNames[index],
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? Colors.white : AppColors.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 28),
+              Text(
+                'Ton niveau en\ncuisine',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  height: 1.05,
                 ),
-              );
-            }),
-          ),
-          const SizedBox(height: 32),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppColors.primaryBlue.withOpacity(0.14),
-              inactiveTrackColor: AppColors.textMuted.withOpacity(0.12),
-              trackHeight: 6,
-              thumbColor: Colors.white,
-              thumbShape: const CustomThumbShape(),
-              overlayColor: AppColors.primaryBlue.withOpacity(0.16),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
-            ),
-            child: Slider(
-              value: _sliderValue,
-              min: 0,
-              max: 2,
-              activeColor: AppColors.primaryBlue,
-              onChanged: (value) {
-                setState(() {
-                  _sliderValue = value;
-                  final newLevel = value.clamp(0, 2).round();
-                  if (newLevel != _selectedLevel) {
-                    _selectedLevel = newLevel;
-                    widget.onUpdate(_selectedLevel);
-                  }
-                });
-              },
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            _levelDescriptions[_selectedLevel],
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textMuted,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const Spacer(flex: 3),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 32),
-            child: SizedBox(
-              height: 72,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: LiquidGlassButton(
-                      onPressed: widget.onBack,
-                      height: 44,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.arrow_back,
-                            size: 16,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Retour',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.center,
-                    child: LiquidGlassButton(
-                      onPressed: widget.onNext,
-                      height: 64,
-                      isBlue: true,
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.play_arrow, size: 18, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text(
-                            'Continuer',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                textAlign: TextAlign.center,
               ),
-            ),
+              const SizedBox(height: 12),
+              Text(
+                'On adaptera les recettes à ton expérience',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.primaryBlue,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const Spacer(flex: 2),
+              Row(
+                children: List.generate(3, (index) {
+                  final isSelected = _selectedLevel == index;
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: index == 0 ? 0 : 6,
+                        right: index == 2 ? 0 : 6,
+                      ),
+                      child: SelectableGlassButton(
+                        isSelected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            _selectedLevel = index;
+                            _sliderValue = index.toDouble();
+                          });
+                          widget.onUpdate(_selectedLevel);
+                        },
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        child: Text(
+                          _levelNames[index],
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 32),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: AppColors.primaryBlue.withOpacity(0.14),
+                  inactiveTrackColor: AppColors.textMuted.withOpacity(0.12),
+                  trackHeight: 6,
+                  thumbColor: Colors.white,
+                  thumbShape: const CustomThumbShape(),
+                  overlayColor: AppColors.primaryBlue.withOpacity(0.16),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+                ),
+                child: Slider(
+                  value: _sliderValue,
+                  min: 0,
+                  max: 2,
+                  activeColor: AppColors.primaryBlue,
+                  onChanged: (value) {
+                    setState(() {
+                      _sliderValue = value;
+                      final newLevel = value.clamp(0, 2).round();
+                      if (newLevel != _selectedLevel) {
+                        _selectedLevel = newLevel;
+                        widget.onUpdate(_selectedLevel);
+                      }
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                _levelDescriptions[_selectedLevel],
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textMuted,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const Spacer(flex: 3),
+              const SizedBox(height: 140),
+            ],
           ),
-        ],
-      ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: OnboardingNavBar(
+            onNext: widget.onNext,
+            onBack: widget.onBack,
+          ),
+        ),
+      ],
     );
   }
 }
