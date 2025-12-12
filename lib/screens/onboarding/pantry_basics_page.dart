@@ -196,7 +196,7 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
                 item,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
                 ),
               ),
             );

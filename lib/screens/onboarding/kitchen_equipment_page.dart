@@ -106,7 +106,7 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
                         item['name']!,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: isSelected ? Colors.white : AppColors.textPrimary,
                         ),
                       ),
                     ],

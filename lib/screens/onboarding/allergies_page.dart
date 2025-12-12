@@ -119,7 +119,7 @@ class _AllergiesPageState extends State<AllergiesPage> {
                           allergy['name'],
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: isSelected ? Colors.white : AppColors.textPrimary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

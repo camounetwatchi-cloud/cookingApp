@@ -177,41 +177,41 @@ class SelectableGlassButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: InkWell(
-        onTap: onTap,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        overlayColor: MaterialStateProperty.all(Colors.transparent),
+    return Container(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(borderRadius),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0x66FFFFFF),
-                Color(0x4DFFFFFF),
-              ],
-            ),
-            border: Border.all(
-              color: isSelected ? AppColors.primaryBlue : const Color(0x4DFFFFFF),
-              width: isSelected ? 2 : 1,
-            ),
-            color: isSelected ? AppColors.primaryBlue.withOpacity(0.15) : Colors.transparent,
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0D000000), // 5% black - plus adouci
-                blurRadius: 12,
-                offset: Offset(0, 4),
-              ),
-            ],
+        boxShadow: AppShadows.liquidGlass,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isSelected
+              ? [
+                  AppColors.primaryBlue.withOpacity(0.9),
+                  AppColors.primaryBlue.withOpacity(0.8),
+                ]
+              : const [
+                  Color(0xFFFFFFFF), // pure white
+                  Color(0xFFFFFFFF), // pure white
+                ],
+        ),
+        border: Border.all(
+          color: const Color(0x52FFFFFF), // rgba(255, 255, 255, 0.32)
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: InkWell(
+          onTap: onTap,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          overlayColor: MaterialStateProperty.all(Colors.transparent),
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: Container(
+            padding: padding,
+            child: child,
           ),
-          child: child,
         ),
       ),
     );

@@ -113,7 +113,7 @@ class _DislikesPageState extends State<DislikesPage> {
                       _spiceLevels[index],
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),

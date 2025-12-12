@@ -117,7 +117,7 @@ class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: isSelected ? Colors.white : AppColors.textPrimary,
                           ),
                         ),
                       ),

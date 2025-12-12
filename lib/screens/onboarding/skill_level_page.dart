@@ -87,7 +87,7 @@ class _SkillLevelPageState extends State<SkillLevelPage> {
                       _levelNames[index],
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
