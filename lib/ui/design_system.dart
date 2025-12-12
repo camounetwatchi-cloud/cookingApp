@@ -31,9 +31,9 @@ class AppShadows {
 
   static const List<BoxShadow> liquidGlass = [
     BoxShadow(
-      color: Color(0x1A000000), // 10% black - adouci
-      blurRadius: 20,
-      offset: Offset(0, 8),
+      color: Color(0x0A000000), // ~6% black - reduced
+      blurRadius: 12,
+      offset: Offset(0, 6),
       spreadRadius: 0,
     ),
   ];
@@ -88,7 +88,10 @@ class LiquidGlassButton extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(34),
         child: InkWell(
-          onTap: isLoading ? null : onPressed,
+            onTap: isLoading ? null : onPressed,
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            overlayColor: MaterialStateProperty.all(Colors.transparent),
           borderRadius: BorderRadius.circular(34),
           child: Container(
             height: height,
@@ -179,6 +182,9 @@ class SelectableGlassButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(borderRadius),
       child: InkWell(
         onTap: onTap,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        overlayColor: MaterialStateProperty.all(Colors.transparent),
         borderRadius: BorderRadius.circular(borderRadius),
         child: Container(
           padding: padding,
