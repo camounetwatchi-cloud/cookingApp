@@ -66,19 +66,26 @@ class LiquidGlassButton extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(34),
         boxShadow: AppShadows.liquidGlass,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isBlue
-              ? [
+        gradient: isBlue
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
                   AppColors.primaryBlue.withOpacity(0.9),
                   AppColors.primaryBlue.withOpacity(0.8),
-                ]
-              : const [
-                  Color(0xFFFFFFFF), // pure white
-                  Color(0xFFFFFFFF), // pure white
                 ],
-        ),
+              )
+            : const RadialGradient(
+                center: Alignment(-1.0, -1.0), // top-left corner
+                radius: 1.4,
+                colors: [
+                  Color(0xFFF2F2F2), // subtle gray at top-left corner
+                  Color(0xFFF8F8F8), // light transition
+                  Color(0xFFFFFFFF), // pure white
+                  Color(0xFFFFFFFF), // pure white majority
+                ],
+                stops: [0.0, 0.35, 0.65, 1.0],
+              ),
         border: Border.all(
           color: const Color(0x52FFFFFF), // rgba(255, 255, 255, 0.32)
           width: 1,
@@ -181,19 +188,26 @@ class SelectableGlassButton extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: AppShadows.liquidGlass,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isSelected
-              ? [
+        gradient: isSelected
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
                   AppColors.primaryBlue.withOpacity(0.9),
                   AppColors.primaryBlue.withOpacity(0.8),
-                ]
-              : const [
-                  Color(0xFFFFFFFF), // pure white
-                  Color(0xFFFFFFFF), // pure white
                 ],
-        ),
+              )
+            : const RadialGradient(
+                center: Alignment(-1.0, -1.0), // top-left corner
+                radius: 2.5,
+                colors: [
+                  Color(0xFFF2F2F2), // subtle gray at top-left corner
+                  Color(0xFFF8F8F8), // light transition
+                  Color(0xFFFFFFFF), // pure white
+                  Color(0xFFFFFFFF), // pure white majority
+                ],
+                stops: [0.0, 0.35, 0.65, 1.0],
+              ),
         border: Border.all(
           color: const Color(0x52FFFFFF), // rgba(255, 255, 255, 0.32)
           width: 1,
