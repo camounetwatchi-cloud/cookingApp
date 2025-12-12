@@ -10,7 +10,7 @@ class AppColors {
   static const Color primaryBlue = Color(0xFF0088FF);
   static const Color textPrimary = Color(0xFF262626);
   static const Color textMuted = Color(0x99262626); // 60% alpha
-  static const Color background = Color(0xFFF5F5F5);
+  static const Color background = Color(0xFFFFFFFF);
   static const Color surface = Colors.white;
   static const Color stroke = Color(0x14000000); // 8% black
   static const Color shadow = Color(0x14000000); // 8% black for soft shadow
@@ -75,8 +75,8 @@ class LiquidGlassButton extends StatelessWidget {
                   AppColors.primaryBlue.withOpacity(0.8),
                 ]
               : const [
-                  Color(0xB3FAFAFA), // rgba(250, 250, 250, 0.7)
-                  Color(0x99FAFAFA), // rgba(250, 250, 250, 0.6)
+                  Color(0xFFFFFFFF), // pure white
+                  Color(0xFFFFFFFF), // pure white
                 ],
         ),
         border: Border.all(
