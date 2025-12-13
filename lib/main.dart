@@ -713,9 +713,9 @@ enum _MenuAction { preferences, logout }
 class _FrigoPageState extends State<FrigoPage> {
   final ImagePicker _picker = ImagePicker();
   bool _loading = false;
-  List<String> _items = [];
   final TextEditingController _manualItemController = TextEditingController();
   final Set<String> _allItems = {}; // All items: detected + manually added
+  final List<Map<String, dynamic>> _favoriteRecipes = [];
   final LayerLink _menuLayerLink = LayerLink();
   OverlayEntry? _menuOverlayEntry;
 
@@ -726,7 +726,6 @@ class _FrigoPageState extends State<FrigoPage> {
     try {
       setState(() {
         _loading = true;
-        _items = [];
       });
 
       // Show scan progress overlay
@@ -743,13 +742,14 @@ class _FrigoPageState extends State<FrigoPage> {
       final XFile? picked = await _picker.pickImage(source: source);
       if (picked == null) {
         setState(() => _loading = false);
-        if (mounted) Navigator.of(context).pop(); // close dialog
+        if (mounted) {
+          Navigator.of(context).pop(); // close dialog
+        }
         return;
       }
 
       // Read bytes (works for web and mobile)
       final bytes = await picked.readAsBytes();
-      print('Image size: ${bytes.length} bytes');
 
       // Build multipart request
       final uri = Uri.parse(backendUrl);
@@ -762,11 +762,8 @@ class _FrigoPageState extends State<FrigoPage> {
         filename: 'fridge.jpg',
       ));
 
-      print('Sending request to $backendUrl...');
       final streamed = await request.send();
       final resp = await http.Response.fromStream(streamed);
-      print('Response status: ${resp.statusCode}');
-      print('Response body: ${resp.body}');
       
       if (resp.statusCode == 200) {
         final json = jsonDecode(resp.body);
@@ -779,22 +776,22 @@ class _FrigoPageState extends State<FrigoPage> {
           }
         }
         setState(() {
-          _items = items;
           _allItems.addAll(items);
         });
+        if (!mounted) return;
         if (items.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Aucun aliment détecté dans l\'image')),
           );
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur ${resp.statusCode}: ${resp.body}')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur ${resp.statusCode}: ${resp.body}')),
+          );
+        }
       }
     } catch (e, stackTrace) {
-      print('Error: $e');
-      print('Stack: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur: $e')),
       );
@@ -816,6 +813,91 @@ class _FrigoPageState extends State<FrigoPage> {
     await FirebaseAuth.instance.signOut();
   }
 
+  void _toggleFavoriteRecipe(Map<String, dynamic> recipe) {
+    setState(() {
+      final index =
+          _favoriteRecipes.indexWhere((r) => r['title'] == recipe['title']);
+      if (index >= 0) {
+        _favoriteRecipes.removeAt(index);
+      } else {
+        _favoriteRecipes.add(recipe);
+      }
+    });
+  }
+
+  bool _isFavoriteRecipe(Map<String, dynamic> recipe) {
+    return _favoriteRecipes.any((r) => r['title'] == recipe['title']);
+  }
+
+  void _openRecipeDetail(Map<String, dynamic> recipe) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => RecipeDetailSheet(
+        recipe: recipe,
+        matchScore: 95,
+        isFavorite: _isFavoriteRecipe(recipe),
+        onToggleFavorite: () => _toggleFavoriteRecipe(recipe),
+        onSelectTab: _handleDockNavigation,
+      ),
+    );
+  }
+
+  void _handleDockNavigation(DockTab tab) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (tab == DockTab.home) return;
+    if (tab == DockTab.scanner) {
+      _pickAndUpload();
+    } else if (tab == DockTab.favorites) {
+      _openFavorites();
+    }
+  }
+
+  void _openSuggestions() {
+    if (_allItems.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RecipeSuggestionsPage(
+          items: _allItems.toList(),
+          onToggleFavorite: (recipe) => _toggleFavoriteRecipe(recipe),
+          isFavorite: _isFavoriteRecipe,
+          onSelectTab: (tab) {
+            if (tab == DockTab.home) {
+              Navigator.of(context).pop();
+            } else if (tab == DockTab.scanner) {
+              Navigator.of(context).pop();
+              _pickAndUpload();
+            } else if (tab == DockTab.favorites) {
+              Navigator.of(context).pop();
+              _openFavorites();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  void _openFavorites() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FavoriteRecipesPage(
+          recipes: _favoriteRecipes,
+          onToggleFavorite: (recipe) => _toggleFavoriteRecipe(recipe),
+          isFavorite: _isFavoriteRecipe,
+          onSelectTab: (tab) {
+            if (tab == DockTab.home) {
+              Navigator.of(context).pop();
+            } else if (tab == DockTab.scanner) {
+              Navigator.of(context).pop();
+              _pickAndUpload();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _manualItemController.dispose();
@@ -833,7 +915,6 @@ class _FrigoPageState extends State<FrigoPage> {
 
   void _showMenu() {
     final overlay = Overlay.of(context);
-    if (overlay == null) return;
 
     _menuOverlayEntry = OverlayEntry(
       builder: (_) {
@@ -1089,6 +1170,41 @@ class _FrigoPageState extends State<FrigoPage> {
 
               const SizedBox(height: 20),
 
+              if (_favoriteRecipes.isNotEmpty) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Mes recettes',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _openFavorites,
+                      child: const Text('Voir tout'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 260,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _favoriteRecipes.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 16),
+                    itemBuilder: (context, index) {
+                      final recipe = _favoriteRecipes[index];
+                      return GestureDetector(
+                        onTap: () => _openRecipeDetail(recipe),
+                        child: _favoriteRecipeCard(recipe, theme),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
               if (_allItems.isNotEmpty) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1100,15 +1216,7 @@ class _FrigoPageState extends State<FrigoPage> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => RecipeSuggestionsPage(
-                              items: _allItems.toList(),
-                            ),
-                          ),
-                        );
-                      },
+                      onPressed: _openSuggestions,
                       child: const Text('Voir les recettes'),
                     ),
                   ],
@@ -1187,15 +1295,7 @@ class _FrigoPageState extends State<FrigoPage> {
 
               if (_allItems.isNotEmpty)
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => RecipeSuggestionsPage(
-                          items: _allItems.toList(),
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: _openSuggestions,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(
@@ -1306,6 +1406,94 @@ class _FrigoPageState extends State<FrigoPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _favoriteRecipeCard(Map<String, dynamic> recipe, ThemeData theme) {
+    final image = recipe['image'] as String? ?? '';
+    return SizedBox(
+      width: 220,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 190,
+            height: 190,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const RadialGradient(
+                colors: [Colors.white, Colors.white, Color(0xFFE6F0FF)],
+                stops: [0.0, 0.45, 1.0],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: ClipOval(
+                child: Image.network(
+                  image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: AppColors.primaryBlue.withOpacity(0.1),
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.restaurant, size: 36),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -10,
+            left: 10,
+            right: 10,
+            child: GlassContainer(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              borderRadius: 26,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
+                          const SizedBox(width: 4),
+                          Text(
+                            recipe['time'] as String? ?? '',
+                            style: theme.textTheme.labelSmall,
+                          ),
+                        ],
+                      ),
+                      Text(
+                        recipe['difficulty'] as String? ?? '',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    recipe['title'] as String? ?? '',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -74,9 +74,10 @@ class FoodPreferences {
     final json = prefs.getString(key);
     if (json == null) return null;
     try {
-      return FoodPreferences.fromJson(jsonDecode(json) as Map<String, dynamic>);
-    } catch (e) {
-      print('Error loading food preferences: $e');
+      return FoodPreferences.fromJson(
+        jsonDecode(json) as Map<String, dynamic>,
+      );
+    } catch (_) {
       return null;
     }
   }

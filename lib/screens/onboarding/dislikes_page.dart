@@ -1,13 +1,11 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import '../../ui/design_system.dart';
 
 class DislikesPage extends StatefulWidget {
   final VoidCallback onNext;
   final VoidCallback onBack;
-  final Function(int) onUpdateSpice;
-  final Function(Set<String>) onUpdateDislikes;
+  final void Function(int)? onUpdateSpice;
+  final void Function(Set<String>)? onUpdateDislikes;
   final int initialSpiceLevel;
   final Set<String> initialDislikedItems;
   
@@ -15,10 +13,10 @@ class DislikesPage extends StatefulWidget {
     super.key,
     required this.onNext,
     required this.onBack,
-    required this.onUpdateSpice,
-    required this.onUpdateDislikes,
-    required this.initialSpiceLevel,
-    required this.initialDislikedItems,
+    this.onUpdateSpice,
+    this.onUpdateDislikes,
+    this.initialSpiceLevel = 0,
+    this.initialDislikedItems = const {},
   });
 
   @override
@@ -54,7 +52,7 @@ class _DislikesPageState extends State<DislikesPage> {
         _dislikedItems.add(item);
         _searchController.clear();
       });
-      widget.onUpdateDislikes(_dislikedItems);
+      widget.onUpdateDislikes?.call(_dislikedItems);
     }
   }
 
@@ -62,7 +60,7 @@ class _DislikesPageState extends State<DislikesPage> {
     setState(() {
       _dislikedItems.remove(item);
     });
-    widget.onUpdateDislikes(_dislikedItems);
+    widget.onUpdateDislikes?.call(_dislikedItems);
   }
 
   @override
@@ -111,7 +109,7 @@ class _DislikesPageState extends State<DislikesPage> {
                             _spiceLevel = index;
                             _spiceSliderValue = index.toDouble();
                           });
-                          widget.onUpdateSpice(_spiceLevel);
+                          widget.onUpdateSpice?.call(_spiceLevel);
                         },
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         child: Text(
@@ -149,7 +147,7 @@ class _DislikesPageState extends State<DislikesPage> {
                       final newLevel = value.clamp(0, 2).round();
                       if (newLevel != _spiceLevel) {
                         _spiceLevel = newLevel;
-                        widget.onUpdateSpice(_spiceLevel);
+                widget.onUpdateSpice?.call(_spiceLevel);
                       }
                     });
                   },
