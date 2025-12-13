@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -15,6 +16,8 @@ import 'models/food_preferences.dart';
 import 'screens/home/scan_and_recipes.dart';
 import 'screens/onboarding/onboarding_flow.dart';
 import 'ui/design_system.dart';
+
+const _fridgeImageAsset = 'assets/images/fridge_bg_v2.png';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -332,17 +335,80 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Widget _buildAuthScreen() {
+    if (!_hasFirstName) {
+      return _buildFirstNameScreen();
+    }
+
+    final card = SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: GlassContainer(
+          padding: const EdgeInsets.all(28),
+          borderRadius: 32,
+          backgroundOpacity: 0.28,
+          strokeOpacity: 0.22,
+          child: _showEmailForm ? _buildEmailForm() : _buildMainButtons(),
+        ),
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(child: card),
+      ),
+    );
+  }
+
+  Widget _buildFirstNameScreen() {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: !_hasFirstName
-                  ? _buildWelcomeIntro()
-                  : (_showEmailForm ? _buildEmailForm() : _buildMainButtons()),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final availableWidth = constraints.maxWidth;
+                final size = MediaQuery.of(context).size;
+                final heroHeight = size.height * 0.96;
+                final cardWidth = availableWidth.clamp(240.0, 300.0);
+                final fridgeHeight = heroHeight * 2.0;
+                final targetWidth = fridgeHeight * 0.85;
+                final minWidth = cardWidth + 220;
+                final maxWidth = math.max(minWidth, size.width * 1.4);
+                final fridgeWidth = targetWidth.clamp(minWidth, maxWidth);
+
+                return SizedBox(
+                  height: heroHeight,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: const Alignment(0, -0.05),
+                        child: SizedBox(
+                          height: fridgeHeight,
+                          width: fridgeWidth,
+                          child: Image.asset(
+                            _fridgeImageAsset,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          width: cardWidth,
+                          child: _GlassWelcomeCard(
+                            child: _buildWelcomeIntro(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -352,55 +418,26 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Widget _buildWelcomeIntro() {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const SizedBox(height: 60),
         const Text(
           'Bienvenue,',
           style: TextStyle(
-            fontSize: 32,
+            fontSize: 30,
             fontWeight: FontWeight.w800,
             color: Colors.black,
+            letterSpacing: -0.3,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 12),
-        Text(
-          'Comment dois-je t’appeler ?',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
+        const SizedBox(height: 18),
+        Align(
+          alignment: Alignment.center,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 170),
+            child: _AddFirstNameButton(onTap: _promptForFirstName),
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 32),
-        LiquidGlassButton(
-          onPressed: _promptForFirstName,
-          height: 54,
-          width: double.infinity,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.edit_outlined, size: 18, color: Colors.black87),
-              SizedBox(width: 10),
-              Text(
-                'Ajouter prénom',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Tu pourras le modifier plus tard.',
-          style: TextStyle(color: Colors.black54, fontSize: 13),
-          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -1116,59 +1153,7 @@ class _FrigoPageState extends State<FrigoPage> {
               ),
               const SizedBox(height: 18),
 
-              // Scan card
-              GlassContainer(
-                padding: const EdgeInsets.all(18),
-                borderRadius: 22,
-                backgroundOpacity: 0.38,
-                strokeOpacity: 0.22,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        GlassContainer(
-                          padding: const EdgeInsets.all(14),
-                          borderRadius: 16,
-                          backgroundOpacity: 0.32,
-                          strokeOpacity: 0.22,
-                          child: Icon(
-                            _loading ? Icons.hourglass_top : Icons.qr_code_scanner,
-                            color: AppColors.primaryBlue,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _loading ? 'Analyse en cours…' : 'Scanner mon frigo',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    ElevatedButton.icon(
-                      onPressed: _loading ? null : _pickAndUpload,
-                      icon: const Icon(Icons.camera_alt, size: 18),
-                      label: Text(
-                        _loading ? 'Analyse…' : 'Lancer un scan',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
+              _buildScanHero(theme),
 
               if (_favoriteRecipes.isNotEmpty) ...[
                 Row(
@@ -1497,6 +1482,70 @@ class _FrigoPageState extends State<FrigoPage> {
       ),
     );
   }
+
+  Widget _buildScanHero(ThemeData theme) {
+    return SizedBox(
+      height: 340,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Align(
+            alignment: Alignment.topCenter,
+            child: Image.asset(
+              _fridgeImageAsset,
+              height: 320,
+              fit: BoxFit.contain,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: GlassContainer(
+              padding: const EdgeInsets.all(18),
+              borderRadius: 24,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _loading ? 'Analyse en cours…' : 'Scanner mon frigo',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  LiquidGlassButton(
+                    onPressed: _loading ? null : _pickAndUpload,
+                    height: 54,
+                    width: double.infinity,
+                    isBlue: true,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _loading ? Icons.hourglass_top : Icons.camera_alt_outlined,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _loading ? 'Analyse en cours' : 'Lancer un scan',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _MenuEntry extends StatelessWidget {
@@ -1551,5 +1600,213 @@ class _MenuEntry extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _GlassWelcomeCard extends StatelessWidget {
+  const _GlassWelcomeCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(34),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(34),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.78),
+                Colors.white.withOpacity(0.5),
+                const Color(0xFFE6F1FF).withOpacity(0.55),
+              ],
+              stops: const [0.0, 0.45, 1.0],
+            ),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.6),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0x2D80B2FF),
+                blurRadius: 32,
+                offset: const Offset(0, 18),
+                spreadRadius: -8,
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+                spreadRadius: -6,
+              ),
+            ],
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(34),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0x90FFFFFF),
+                  Color(0x00FFFFFF),
+                ],
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddFirstNameButton extends StatelessWidget {
+  const _AddFirstNameButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const borderRadius = 34.0;
+    return CustomPaint(
+      foregroundPainter: _DashedBorderPainter(
+        radius: borderRadius,
+        strokeWidth: 2.2,
+        dashLength: 14,
+        gapLength: 6,
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Color(0xFF49C6FF),
+            Color(0xFF0F7CF6),
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(5),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(borderRadius),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.09),
+                blurRadius: 35,
+                spreadRadius: -8,
+                offset: const Offset(0, 20),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(borderRadius),
+              onTap: onTap,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFFFFF3C6),
+                              Color(0xFFE2F7FF),
+                            ],
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          size: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Ajouter prénom',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  _DashedBorderPainter({
+    required this.radius,
+    required this.gradient,
+    this.strokeWidth = 2,
+    this.dashLength = 8,
+    this.gapLength = 4,
+  });
+
+  final double radius;
+  final Gradient gradient;
+  final double strokeWidth;
+  final double dashLength;
+  final double gapLength;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = strokeWidth
+      ..shader = gradient.createShader(rect);
+
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius)));
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = (distance + dashLength).clamp(0.0, metric.length);
+        final extracted = metric.extractPath(distance, next);
+        canvas.drawPath(extracted, paint);
+        distance = next + gapLength;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) {
+    return oldDelegate.radius != radius ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.dashLength != dashLength ||
+        oldDelegate.gapLength != gapLength ||
+        oldDelegate.gradient != gradient;
   }
 }

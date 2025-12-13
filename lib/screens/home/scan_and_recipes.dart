@@ -1713,39 +1713,9 @@ class RecipeCompletionPage extends StatelessWidget {
                 children: [
                   const SizedBox(height: 32),
                   Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _DishPlateImage(imageUrl: imageUrl, size: 270),
-                        const SizedBox(height: 32),
-                        GlassContainer(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 28,
-                            vertical: 28,
-                          ),
-                          borderRadius: 32,
-                          child: Column(
-                            children: [
-                              Text(
-                                'C’est prêt !',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  color: AppColors.primaryBlue,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Régalez-vous et bravo d’avoir participé à l’antigaspi !',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  height: 1.45,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    child: _CompletionHero(
+                      imageUrl: imageUrl,
+                      theme: theme,
                     ),
                   ),
                   const SizedBox(height: 120),
@@ -1760,6 +1730,70 @@ class RecipeCompletionPage extends StatelessWidget {
             child: _GlassDock(
               selectedTab: DockTab.home,
               onTap: (tab) => _handleTap(context, tab),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompletionHero extends StatelessWidget {
+  const _CompletionHero({
+    required this.imageUrl,
+    required this.theme,
+  });
+
+  final String imageUrl;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    const double dishSize = 270;
+    return SizedBox(
+      height: dishSize + 180,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            top: 0,
+            child: _DishPlateImage(
+              imageUrl: imageUrl,
+              size: dishSize,
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            child: SizedBox(
+              width: dishSize * 1.15,
+              child: GlassContainer(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 26,
+                  vertical: 24,
+                ),
+                borderRadius: 32,
+                child: Column(
+                  children: [
+                    Text(
+                      'C’est prêt !',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Régalez-vous et bravo d’avoir participé à l’antigaspi !',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        height: 1.45,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
