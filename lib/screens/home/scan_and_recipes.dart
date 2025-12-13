@@ -56,126 +56,334 @@ class RecipeSuggestionsPage extends StatelessWidget {
   final List<String> items;
   const RecipeSuggestionsPage({super.key, required this.items});
 
+  List<Map<String, String>> get _recipes => [
+        {
+          'title': 'Bœuf sauté aux pâtes',
+          'time': '14 min',
+          'difficulty': 'Facile',
+          'servings': '1 personne',
+          'image':
+              'https://images.unsplash.com/photo-1473093226795-af9932fe5856?auto=format&fit=crop&w=800&q=80',
+        },
+        {
+          'title': 'Bœuf Bourguignon express',
+          'time': '18 min',
+          'difficulty': 'Moyen',
+          'servings': '2 personnes',
+          'image':
+              'https://images.unsplash.com/photo-1432139555190-58524dae6a55?auto=format&fit=crop&w=800&q=80',
+        },
+        {
+          'title': 'Tarte fine aux légumes rôtis',
+          'time': '22 min',
+          'difficulty': 'Facile',
+          'servings': '2 personnes',
+          'image':
+              'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
+        },
+        {
+          'title': 'Bowl coloré au poulet croustillant',
+          'time': '16 min',
+          'difficulty': 'Intermédiaire',
+          'servings': '1 personne',
+          'image':
+              'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=800&q=80',
+        },
+        {
+          'title': 'Risotto crémeux aux champignons',
+          'time': '20 min',
+          'difficulty': 'Moyen',
+          'servings': '2 personnes',
+          'image':
+              'https://images.unsplash.com/photo-1476127396010-4f6bbad00215?auto=format&fit=crop&w=800&q=80',
+        },
+        {
+          'title': 'Salade tiède saumon & agrumes',
+          'time': '12 min',
+          'difficulty': 'Facile',
+          'servings': '1 personne',
+          'image':
+              'https://images.unsplash.com/photo-1481391032119-d89fee407e44?auto=format&fit=crop&w=800&q=80',
+        },
+      ];
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // Mock recipes based on available items
-    final recipes = [
-      {
-        'title': 'Pâtes crémeuses au saumon',
-        'time': '20 min',
-        'difficulty': 'Facile',
-        'match': 92,
-      },
-      {
-        'title': 'Bowl poulet croquant & avocat',
-        'time': '18 min',
-        'difficulty': 'Intermédiaire',
-        'match': 88,
-      },
-      {
-        'title': 'Wok de légumes gingembre',
-        'time': '15 min',
-        'difficulty': 'Rapide',
-        'match': 84,
-      },
-    ];
+    final recipes = _recipes;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Recettes proposées'),
-      ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: recipes.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final recipe = recipes[index];
-          final match = recipe['match'] as int;
-          return GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => RecipeDetailPage(
-                    title: recipe['title'] as String,
-                    time: recipe['time'] as String,
-                    difficulty: recipe['difficulty'] as String,
-                    match: match,
-                  ),
-                ),
-              );
-            },
-            child: GlassContainer(
-              padding: const EdgeInsets.all(16),
-              borderRadius: 20,
-              child: Row(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(Icons.restaurant, color: AppColors.primaryBlue),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const SizedBox(height: 12),
                         Text(
-                          recipe['title'] as String,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
+                          'Idées de recettes',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            height: 1.05,
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            _pill('${recipe['time']}', theme),
-                            const SizedBox(width: 8),
-                            _pill('${recipe['difficulty']}', theme),
-                          ],
+                        Text(
+                          'Basées sur ton frigo (${items.length} ingrédients)',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.primaryBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  GlassContainer(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    borderRadius: 14,
-                    backgroundOpacity: 0.22,
-                    strokeOpacity: 0.2,
-                    child: Text(
-                      '$match%',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: AppColors.primaryBlue,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                ),
+              ),
+              SliverPadding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 0)
+                        .copyWith(bottom: 180),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final recipe = recipes[index];
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: index == recipes.length - 1 ? 0 : 28),
+                        child: _RecipeCard(
+                          recipe: recipe,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => RecipeDetailPage(
+                                  title: recipe['title']!,
+                                  time: recipe['time']!,
+                                  difficulty: recipe['difficulty']!,
+                                  match: 90 - (index * 4),
+                                  servings: recipe['servings']!,
+                                  imageUrl: recipe['image']!,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                    childCount: recipes.length,
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.textMuted),
-                ],
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: const _GlassDock(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecipeCard extends StatelessWidget {
+  const _RecipeCard({required this.recipe, required this.onTap});
+
+  final Map<String, String> recipe;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final image = recipe['image']!;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        height: 340,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.bottomCenter,
+          children: [
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(34),
+                child: Image.network(
+                  image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: AppColors.primaryBlue.withOpacity(0.08),
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.restaurant, size: 48),
+                  ),
+                ),
               ),
             ),
-          );
-        },
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: -18,
+              child: GlassContainer(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                borderRadius: 28,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _infoLine(Icons.access_time, recipe['time']!, theme),
+                        _infoLine(Icons.person_outline, recipe['servings']!, theme),
+                        Text(
+                          recipe['difficulty']!,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      recipe['title']!,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primaryBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _pill(String text, ThemeData theme) {
-    return GlassContainer(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      borderRadius: 12,
-      backgroundOpacity: 0.22,
-      strokeOpacity: 0.18,
-      child: Text(
-        text,
-        style: theme.textTheme.labelMedium?.copyWith(color: AppColors.textPrimary),
+  Widget _infoLine(IconData icon, String text, ThemeData theme) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.textMuted),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: theme.textTheme.labelMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GlassDock extends StatelessWidget {
+  const _GlassDock();
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      {'label': 'Accueil', 'icon': Icons.home_rounded},
+      {'label': 'Scanner', 'icon': Icons.qr_code_scanner_rounded},
+      {'label': 'Favoris', 'icon': Icons.favorite_border},
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        child: GlassContainer(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          borderRadius: 40,
+          backgroundOpacity: 0.5,
+          strokeOpacity: 0.22,
+          child: Row(
+            children: List.generate(items.length, (index) {
+              final selected = index == 0;
+              final data = items[index];
+              return Expanded(
+                child: _DockButton(
+                  label: data['label'] as String,
+                  icon: data['icon'] as IconData,
+                  selected: selected,
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DockButton extends StatelessWidget {
+  const _DockButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: selected
+            ? LinearGradient(
+                colors: [
+                  AppColors.primaryBlue.withOpacity(0.95),
+                  AppColors.primaryBlue,
+                ],
+              )
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(30),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: selected ? Colors.white : AppColors.textPrimary,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -185,6 +393,8 @@ class RecipeDetailPage extends StatelessWidget {
   final String title;
   final String time;
   final String difficulty;
+  final String servings;
+  final String imageUrl;
   final int match;
 
   const RecipeDetailPage({
@@ -193,6 +403,8 @@ class RecipeDetailPage extends StatelessWidget {
     required this.time,
     required this.difficulty,
     required this.match,
+    required this.servings,
+    required this.imageUrl,
   });
 
   @override
@@ -213,9 +425,25 @@ class RecipeDetailPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: AspectRatio(
+              aspectRatio: 1.1,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: AppColors.primaryBlue.withOpacity(0.08),
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.restaurant, size: 48),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
           GlassContainer(
             padding: const EdgeInsets.all(18),
-            borderRadius: 22,
+            borderRadius: 24,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -225,18 +453,21 @@ class RecipeDetailPage extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Row(
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
                   children: [
-                    _pill('$time • $difficulty', theme),
-                    const SizedBox(width: 8),
-                    _pill('Match $match%', theme),
+                    _infoChip(Icons.access_time, time, theme),
+                    _infoChip(Icons.person_outline, servings, theme),
+                    _infoChip(Icons.local_fire_department, difficulty, theme),
+                    _infoChip(Icons.star_rounded, 'Match $match%', theme),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
           Text(
             'Étapes',
             style: theme.textTheme.titleMedium?.copyWith(
@@ -284,7 +515,7 @@ class RecipeDetailPage extends StatelessWidget {
               ),
             );
           }),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
             style: ElevatedButton.styleFrom(
@@ -303,17 +534,26 @@ class RecipeDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _pill(String text, ThemeData theme) {
+  Widget _infoChip(IconData icon, String text, ThemeData theme) {
     return GlassContainer(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      borderRadius: 12,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      borderRadius: 16,
       backgroundOpacity: 0.22,
       strokeOpacity: 0.18,
-      child: Text(
-        text,
-        style: theme.textTheme.labelMedium?.copyWith(color: AppColors.textPrimary),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.primaryBlue),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-
