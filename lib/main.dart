@@ -387,21 +387,29 @@ class _AuthWrapperState extends State<AuthWrapper> {
                     children: [
                       Align(
                         alignment: const Alignment(0, -0.05),
-                        child: SizedBox(
-                          height: fridgeHeight,
-                          width: fridgeWidth,
-                          child: Image.asset(
-                            _fridgeImageAsset,
-                            fit: BoxFit.contain,
+                        child: LiquidEntrance(
+                          offset: const Offset(0, -40),
+                          duration: const Duration(milliseconds: 900),
+                          child: SizedBox(
+                            height: fridgeHeight,
+                            width: fridgeWidth,
+                            child: Image.asset(
+                              _fridgeImageAsset,
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
                       ),
                       Align(
                         alignment: Alignment.center,
-                        child: SizedBox(
-                          width: cardWidth,
-                          child: _GlassWelcomeCard(
-                            child: _buildWelcomeIntro(),
+                        child: LiquidEntrance(
+                          offset: const Offset(0, 60),
+                          delay: const Duration(milliseconds: 150),
+                          child: SizedBox(
+                            width: cardWidth,
+                            child: _GlassWelcomeCard(
+                              child: _buildWelcomeIntro(),
+                            ),
                           ),
                         ),
                       ),

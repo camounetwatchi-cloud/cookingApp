@@ -1727,9 +1727,13 @@ class RecipeCompletionPage extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: 0,
-            child: _GlassDock(
-              selectedTab: DockTab.home,
-              onTap: (tab) => _handleTap(context, tab),
+            child: LiquidEntrance(
+              offset: const Offset(0, 40),
+              delay: const Duration(milliseconds: 200),
+              child: _GlassDock(
+                selectedTab: DockTab.home,
+                onTap: (tab) => _handleTap(context, tab),
+              ),
             ),
           ),
         ],
@@ -1749,54 +1753,67 @@ class _CompletionHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double dishSize = 270;
+    const double dishSize = 280;
+    const double cardVerticalOffset = dishSize * 0.58;
+
     return SizedBox(
-      height: dishSize + 180,
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: 0,
-            child: _DishPlateImage(
-              imageUrl: imageUrl,
-              size: dishSize,
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            child: SizedBox(
-              width: dishSize * 1.15,
-              child: GlassContainer(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 26,
-                  vertical: 24,
-                ),
-                borderRadius: 32,
-                child: Column(
-                  children: [
-                    Text(
-                      'C’est prêt !',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: AppColors.primaryBlue,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Régalez-vous et bravo d’avoir participé à l’antigaspi !',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.45,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
+      height: dishSize + 280,
+      child: Center(
+        child: SizedBox(
+          width: dishSize * 1.25,
+          height: dishSize + 160,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.topCenter,
+            children: [
+              LiquidEntrance(
+                offset: const Offset(0, -30),
+                duration: const Duration(milliseconds: 800),
+                child: _DishPlateImage(
+                  imageUrl: imageUrl,
+                  size: dishSize,
                 ),
               ),
-            ),
+              Positioned(
+                top: cardVerticalOffset,
+                child: LiquidEntrance(
+                  offset: const Offset(0, 30),
+                  delay: const Duration(milliseconds: 120),
+                  child: SizedBox(
+                    width: dishSize,
+                    child: GlassContainer(
+                      borderRadius: 28,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 18),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'C\'est prêt !',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: AppColors.primaryBlue,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Régalez-vous et bravo d’avoir participé à l’antigaspi !',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              height: 1.4,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

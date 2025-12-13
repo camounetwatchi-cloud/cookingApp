@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -40,7 +41,7 @@ class AppShadows {
 }
 
 /// Liquid Glass Button - Modern glassmorphism button with advanced shadow effects
-class LiquidGlassButton extends StatelessWidget {
+class LiquidGlassButton extends StatefulWidget {
   const LiquidGlassButton({
     super.key,
     required this.onPressed,
@@ -59,69 +60,160 @@ class LiquidGlassButton extends StatelessWidget {
   final bool isBlue;
 
   @override
+  State<LiquidGlassButton> createState() => _LiquidGlassButtonState();
+}
+
+class _LiquidGlassButtonState extends State<LiquidGlassButton>
+    with SingleTickerProviderStateMixin {
+  bool _isPressed = false;
+
+  void _handleHighlight(bool value) {
+    if (widget.onPressed == null || widget.isLoading) return;
+    setState(() => _isPressed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Adaptive radius based on button height for consistent visual effect
-    final adaptiveRadius = (height / 40.0).clamp(1.0, 2.0);
-    
-    return Container(
-      height: height,
-      width: width,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(34),
-        boxShadow: AppShadows.liquidGlass,
-        gradient: isBlue
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primaryBlue.withOpacity(0.9),
-                  AppColors.primaryBlue.withOpacity(0.8),
-                ],
-              )
-            : RadialGradient(
-                center: const Alignment(-1.0, -1.0), // top-left corner
-                radius: adaptiveRadius,
-                colors: const [
-                  Color(0xFFF2F2F2), // subtle gray at top-left corner
-                  Color(0xFFF8F8F8), // light transition
-                  Color(0xFFFFFFFF), // pure white
-                  Color(0xFFFFFFFF), // pure white majority
-                ],
-                stops: const [0.0, 0.35, 0.65, 1.0],
-              ),
-        border: Border.all(
-          color: const Color(0x52FFFFFF), // rgba(255, 255, 255, 0.32)
-          width: 1,
+    final adaptiveRadius = (widget.height / 40.0).clamp(1.0, 2.0);
+
+    final gradient = widget.isBlue
+        ? LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primaryBlue.withOpacity(0.95),
+              AppColors.primaryBlue.withOpacity(0.85),
+            ],
+          )
+        : RadialGradient(
+            center: const Alignment(-1.0, -1.0),
+            radius: adaptiveRadius,
+            colors: const [
+              Color(0xFFF2F2F2),
+              Color(0xFFF8F8F8),
+              Color(0xFFFFFFFF),
+              Color(0xFFFFFFFF),
+            ],
+            stops: const [0.0, 0.35, 0.65, 1.0],
+          );
+
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      scale: _isPressed ? 0.96 : 1.0,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        height: widget.height,
+        width: widget.width,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(34),
+          boxShadow: AppShadows.liquidGlass,
+          gradient: gradient,
+          border: Border.all(
+            color: const Color(0x52FFFFFF),
+            width: 1,
+          ),
         ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(34),
-        child: InkWell(
-            onTap: isLoading ? null : onPressed,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(34),
+          child: InkWell(
+            onTap: widget.isLoading ? null : widget.onPressed,
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
             overlayColor: MaterialStateProperty.all(Colors.transparent),
-          borderRadius: BorderRadius.circular(34),
-          child: Container(
-            height: height,
-            width: width,
-            alignment: Alignment.center,
-            child: isLoading
-                ? SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        isBlue ? Colors.white : AppColors.primaryBlue,
+            onHighlightChanged: _handleHighlight,
+            borderRadius: BorderRadius.circular(34),
+            child: Container(
+              height: widget.height,
+              width: widget.width,
+              alignment: Alignment.center,
+              child: widget.isLoading
+                  ? SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          widget.isBlue ? Colors.white : AppColors.primaryBlue,
+                        ),
                       ),
-                    ),
-                  )
-                : child,
+                    )
+                  : widget.child,
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class LiquidEntrance extends StatefulWidget {
+  const LiquidEntrance({
+    super.key,
+    required this.child,
+    this.offset = const Offset(0, 30),
+    this.duration = const Duration(milliseconds: 600),
+    this.delay = Duration.zero,
+    this.curve = Curves.easeOutCubic,
+  });
+
+  final Widget child;
+  final Offset offset;
+  final Duration duration;
+  final Duration delay;
+  final Curve curve;
+
+  @override
+  State<LiquidEntrance> createState() => _LiquidEntranceState();
+}
+
+class _LiquidEntranceState extends State<LiquidEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  );
+
+  late final Animation<double> _animation =
+      CurvedAnimation(parent: _controller, curve: widget.curve);
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.delay == Duration.zero) {
+      _controller.forward();
+    } else {
+      Future.delayed(widget.delay, () {
+        if (mounted) _controller.forward();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        final value = _animation.value;
+        final dx = widget.offset.dx * (1 - value);
+        final dy = widget.offset.dy * (1 - value);
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(dx, dy),
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
     );
   }
 }
@@ -422,6 +514,16 @@ class AppTheme {
   static ThemeData light() {
     final base = ThemeData(
       useMaterial3: true,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: GlassPageTransitionsBuilder(),
+          TargetPlatform.iOS: GlassPageTransitionsBuilder(),
+          TargetPlatform.macOS: GlassPageTransitionsBuilder(),
+          TargetPlatform.windows: GlassPageTransitionsBuilder(),
+          TargetPlatform.linux: GlassPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: GlassPageTransitionsBuilder(),
+        },
+      ),
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primaryBlue,
         brightness: Brightness.light,
@@ -517,5 +619,61 @@ class AppTheme {
     );
 
     return base;
+  }
+}
+
+class GlassPageTransitionsBuilder extends PageTransitionsBuilder {
+  const GlassPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (route.settings.name == Navigator.defaultRouteName) return child;
+
+    final primary = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeIn,
+    );
+    final secondaryCurve = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: Curves.easeOut,
+      reverseCurve: Curves.easeIn,
+    );
+
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(primary),
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.0, 0.08),
+          end: Offset.zero,
+        ).animate(primary),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.98, end: 1.0).animate(primary),
+          child: DecoratedBoxTransition(
+            position: DecorationPosition.background,
+            decoration: TweenSequence([
+              TweenSequenceItem(
+                tween: DecorationTween(
+                  begin: const BoxDecoration(
+                    color: Colors.transparent,
+                  ),
+                  end: const BoxDecoration(
+                    color: Colors.transparent,
+                  ),
+                ),
+                weight: 1,
+              ),
+            ]).animate(secondaryCurve),
+            child: child,
+          ),
+        ),
+      ),
+    );
   }
 }
