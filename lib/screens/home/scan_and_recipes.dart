@@ -1,8 +1,119 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../models/food_preferences.dart';
 import '../../ui/design_system.dart';
 
 enum DockTab { home, scanner, favorites }
+
+const Map<String, String> _diacriticMap = {
+  'à': 'a',
+  'â': 'a',
+  'ä': 'a',
+  'á': 'a',
+  'ã': 'a',
+  'é': 'e',
+  'è': 'e',
+  'ê': 'e',
+  'ë': 'e',
+  'í': 'i',
+  'ì': 'i',
+  'î': 'i',
+  'ï': 'i',
+  'ó': 'o',
+  'ò': 'o',
+  'ô': 'o',
+  'ö': 'o',
+  'ú': 'u',
+  'ù': 'u',
+  'û': 'u',
+  'ü': 'u',
+  'ç': 'c',
+  'œ': 'oe',
+  'æ': 'ae',
+};
+
+const List<String> _defaultDishImages = [
+  'https://images.unsplash.com/photo-1484723091739-33f42a6e711c?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1478145046317-39f10e56b5e9?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1481070414801-51fd732d7184?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1506086679524-493c64fdfaa6?auto=format&fit=crop&w=900&q=80',
+];
+
+String _normalizeText(String value) {
+  final buffer = StringBuffer();
+  final lower = value.toLowerCase();
+  for (final rune in lower.runes) {
+    final char = String.fromCharCode(rune);
+    if (_diacriticMap.containsKey(char)) {
+      buffer.write(_diacriticMap[char]);
+    } else if (RegExp(r'[a-z0-9 ]').hasMatch(char)) {
+      buffer.write(char);
+    } else {
+      buffer.write(' ');
+    }
+  }
+  return buffer.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+Set<String> _normalizeSet(Iterable<String> values) {
+  return values
+      .map(_normalizeText)
+      .where((value) => value.isNotEmpty)
+      .toSet();
+}
+
+bool _setContainsTerm(Set<String> haystack, String needle) {
+  for (final item in haystack) {
+    if (item == needle || item.contains(needle) || needle.contains(item)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+final Set<String> _defaultPantryItems = _buildDefaultPantry();
+Set<String> _buildDefaultPantry() {
+  const rawItems = [
+    'Sel',
+    'Poivre',
+    'Huile',
+    'Huile d\'olive',
+    'Huile neutre',
+    'Beurre',
+    'Eau',
+    'Bouillon',
+    'Herbes fraiches',
+    'Basilic',
+    'Vinaigre',
+    'Citron',
+    'Sauce soja',
+    'Miel',
+    'Sucre',
+  ];
+  return _normalizeSet(rawItems);
+}
+
+final Map<String, Set<String>> _inventoryExpansions = _buildInventoryExpansions();
+Map<String, Set<String>> _buildInventoryExpansions() {
+  const raw = {
+    'viande': ['boeuf', 'poulet', 'porc', 'dinde'],
+    'poissons': ['poisson', 'saumon', 'thon', 'crevette'],
+    'legumes': ['courgette', 'carotte', 'tomate', 'oignon', 'chou', 'roquette'],
+    'fruits': ['orange', 'pomme', 'banane', 'pamplemousse'],
+    'produits laitiers': ['lait', 'fromage', 'feta', 'parmesan', 'yaourt'],
+    'pates': ['pates', 'pates fraiches', 'spaghetti'],
+    'oeufs': ['oeuf'],
+    'pain': ['baguette', 'pain'],
+  };
+  final normalized = <String, Set<String>>{};
+  raw.forEach((key, values) {
+    normalized[_normalizeText(key)] = _normalizeSet(values);
+  });
+  return normalized;
+}
 
 class ScanInProgressPage extends StatelessWidget {
   const ScanInProgressPage({super.key});
@@ -57,6 +168,7 @@ class ScanInProgressPage extends StatelessWidget {
 
 class RecipeSuggestionsPage extends StatefulWidget {
   final List<String> items;
+  final FoodPreferences? preferences;
   final void Function(Map<String, dynamic> recipe) onToggleFavorite;
   final bool Function(Map<String, dynamic> recipe) isFavorite;
   final void Function(DockTab tab) onSelectTab;
@@ -64,6 +176,7 @@ class RecipeSuggestionsPage extends StatefulWidget {
   const RecipeSuggestionsPage({
     super.key,
     required this.items,
+    this.preferences,
     required this.onToggleFavorite,
     required this.isFavorite,
     required this.onSelectTab,
@@ -74,7 +187,7 @@ class RecipeSuggestionsPage extends StatefulWidget {
 }
 
 class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
-  List<Map<String, dynamic>> get _recipes => [
+  static final List<Map<String, dynamic>> _baseRecipes = [
         {
           'title': 'Bœuf sauté aux pâtes',
           'time': '14 min',
@@ -88,6 +201,8 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
             {'name': 'Ail', 'quantity': '2 gousses'},
             {'name': 'Bœuf', 'quantity': '150 g'},
           ],
+          'equipment': ['Plaques de cuisson', 'Poele'],
+          'allergyTags': ['Gluten'],
           'stepsDetailed': [
             {
               'title': 'Les pâtes',
@@ -135,6 +250,8 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
             {'name': 'Oignons', 'quantity': '1 pièce'},
             {'name': 'Vin rouge', 'quantity': '120 ml'},
           ],
+          'equipment': ['Plaques de cuisson'],
+          'allergyTags': ['Sulfites'],
           'stepsDetailed': [
             {
               'title': 'Le bœuf',
@@ -181,6 +298,8 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
             {'name': 'Tomates cerises', 'quantity': '6 pièces'},
             {'name': 'Feta', 'quantity': '80 g'},
           ],
+          'equipment': ['Four'],
+          'allergyTags': ['Gluten', 'Lactose'],
           'stepsDetailed': [
             {
               'title': 'La pâte',
@@ -227,6 +346,8 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
             {'name': 'Avocat', 'quantity': '1/2 pièce'},
             {'name': 'Chou rouge', 'quantity': '50 g'},
           ],
+          'equipment': ['Plaques de cuisson'],
+          'allergyTags': ['Gluten'],
           'stepsDetailed': [
             {
               'title': 'Le riz',
@@ -273,6 +394,8 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
             {'name': 'Parmesan', 'quantity': '50 g'},
             {'name': 'Bouillon', 'quantity': '500 ml'},
           ],
+          'equipment': ['Plaques de cuisson'],
+          'allergyTags': ['Lactose'],
           'stepsDetailed': [
             {
               'title': 'Les champignons',
@@ -319,6 +442,8 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
             {'name': 'Pamplemousse', 'quantity': '1/2 pièce'},
             {'name': 'Roquette', 'quantity': '40 g'},
           ],
+          'equipment': ['Plaques de cuisson'],
+          'allergyTags': ['Poisson', 'Sésame'],
           'stepsDetailed': [
             {
               'title': 'Le saumon',
@@ -354,10 +479,215 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
         },
       ];
 
+  List<_RecipeMatch> _buildRecipeMatches() {
+    final normalizedInventory = _normalizeSet(widget.items);
+    final expandedInventory = _expandInventory(normalizedInventory);
+    expandedInventory.addAll(_defaultPantryItems);
+
+    final preferences = widget.preferences;
+    final hasEquipmentPrefs =
+        preferences != null && preferences.kitchenEquipment.isNotEmpty;
+    if (preferences != null) {
+      expandedInventory.addAll(_normalizeSet(preferences.pantryBasics));
+    }
+
+    final restricted = <String>{};
+    if (preferences != null) {
+      restricted
+        ..addAll(_normalizeSet(preferences.allergies))
+        ..addAll(_normalizeSet(preferences.dislikedItems));
+    }
+
+    final ownedEquipment =
+        hasEquipmentPrefs ? _normalizeSet(preferences!.kitchenEquipment) : <String>{};
+
+    final filteredMatches = <_RecipeMatch>[];
+    final fallbackMatches = <_RecipeMatch>[];
+    const adaptiveThreshold = 0.1;
+
+    for (final recipe in _baseRecipes) {
+      final ingredientData = (recipe['ingredients'] as List)
+          .map((item) => (item as Map).map((key, value) => MapEntry(key.toString(), value)))
+          .toList();
+      final normalizedIngredients = ingredientData
+          .map((data) => _normalizeText(data['name']?.toString() ?? ''))
+          .where((value) => value.isNotEmpty)
+          .toList();
+
+      final requiredEquipment = _normalizeSet(
+        (recipe['equipment'] as List<dynamic>? ?? const <dynamic>[]).cast<String>(),
+      );
+      if (hasEquipmentPrefs &&
+          requiredEquipment.isNotEmpty &&
+          !ownedEquipment.containsAll(requiredEquipment)) {
+        continue;
+      }
+
+      final allergyTags = _normalizeSet(
+        (recipe['allergyTags'] as List<dynamic>? ?? const <dynamic>[]).cast<String>(),
+      );
+      final triggers = {...allergyTags, ...normalizedIngredients};
+      if (restricted.isNotEmpty &&
+          triggers.any((tag) => _setContainsTerm(restricted, tag))) {
+        continue;
+      }
+
+      final missing = <String>[];
+      int availableCount = 0;
+      int userMatches = 0;
+      for (var i = 0; i < normalizedIngredients.length; i++) {
+        final ingredient = normalizedIngredients[i];
+        final hasItem = _setContainsTerm(expandedInventory, ingredient);
+        if (!hasItem) {
+          missing.add(ingredientData[i]['name']?.toString() ?? '');
+        } else {
+          availableCount++;
+          if (_setContainsTerm(normalizedInventory, ingredient)) {
+            userMatches++;
+          }
+        }
+      }
+
+      final total = normalizedIngredients.isEmpty ? 1 : normalizedIngredients.length;
+      final coverage = normalizedIngredients.isEmpty ? 1.0 : availableCount / total;
+      final userFactor = normalizedIngredients.isEmpty ? 1.0 : userMatches / total;
+      final blendedScore = (coverage * 0.7 + userFactor * 0.3) * 100;
+      final score = math.max(55, math.min(100, blendedScore.round()));
+      final candidate = _RecipeMatch(recipe: recipe, score: score, missing: missing);
+      if (coverage >= adaptiveThreshold) {
+        filteredMatches.add(candidate);
+      } else {
+        fallbackMatches.add(candidate);
+      }
+    }
+
+    var results = filteredMatches.isNotEmpty ? filteredMatches : fallbackMatches;
+    if (results.isEmpty) {
+      results = fallbackMatches;
+    }
+    if (results.length < 5) {
+      results.addAll(
+        _generateSyntheticRecipes(
+          5 - results.length,
+          normalizedInventory,
+          restricted,
+          preferences,
+        ),
+      );
+    }
+    results.sort((a, b) => b.score.compareTo(a.score));
+    return results;
+  }
+
+  Set<String> _expandInventory(Set<String> inventory) {
+    final expanded = <String>{...inventory};
+    for (final item in inventory) {
+      final extras = _inventoryExpansions[item];
+      if (extras != null) expanded.addAll(extras);
+    }
+    return expanded;
+  }
+
+  List<_RecipeMatch> _generateSyntheticRecipes(
+    int needed,
+    Set<String> normalizedInventory,
+    Set<String> restricted,
+    FoodPreferences? preferences,
+  ) {
+    if (needed <= 0) return [];
+
+    final sourceItems = widget.items.isEmpty
+        ? ['Légumes croquants', 'Poulet', 'Riz parfumé', 'Sauce maison']
+        : widget.items.toList();
+    final cleanItems = sourceItems
+        .where((item) {
+          final norm = _normalizeText(item);
+          if (norm.isEmpty) return false;
+          if (restricted.isEmpty) return true;
+          return !_setContainsTerm(restricted, norm);
+        })
+        .toList();
+    if (cleanItems.isEmpty) cleanItems.addAll(sourceItems);
+
+    final generated = <_RecipeMatch>[];
+    final styles = ['crémeuse', 'vibrante', 'gourmande', 'vivifiante'];
+    final methods = ['Salade', 'Poêlée', 'Bowl', 'Risotto', 'Wok', 'Tartine'];
+    final difficulties = ['Facile', 'Moyen', 'Express'];
+    final equipmentPool = preferences?.kitchenEquipment.isNotEmpty == true
+        ? preferences!.kitchenEquipment.toList()
+        : ['Plaques de cuisson', 'Poele', 'Four'];
+
+    for (var i = 0; i < needed; i++) {
+      final start = (i * 2) % cleanItems.length;
+      final combo = [
+        for (var j = 0; j < math.min(3, cleanItems.length); j++)
+          cleanItems[(start + j) % cleanItems.length]
+      ];
+      final heroIngredient = combo.isNotEmpty ? combo.first : sourceItems.first;
+      final method = methods[i % methods.length];
+      final style = styles[i % styles.length];
+      final title = '$method $heroIngredient $style';
+      final time = '${12 + i * 2} min';
+      final difficulty = difficulties[i % difficulties.length];
+      final servings = (i % 2 == 0) ? '2 personnes' : '1 personne';
+      final image = _defaultDishImages[i % _defaultDishImages.length];
+
+      final ingredients = combo
+          .map((name) => {
+                'name': name,
+                'quantity': '1 portion',
+              })
+          .toList();
+
+      final stepsDetailed = [
+        for (final name in combo)
+          {
+            'title': 'Préparer $name',
+            'description':
+                'Assaisonner $name puis le saisir rapidement pour garder tout le fondant.',
+            'durationLabel': '3 min',
+            'durationMinutes': 3,
+          },
+        {
+          'title': 'Dressage',
+          'description':
+              'Assembler tous les éléments dans un plat et arroser d’une sauce citronnée.',
+          'durationLabel': '2 min',
+          'durationMinutes': 2,
+        },
+      ];
+
+      final steps = stepsDetailed.map((step) => step['description'] as String).toList();
+
+      final recipe = {
+        'title': title,
+        'time': time,
+        'difficulty': difficulty,
+        'servings': servings,
+        'image': image,
+        'ingredients': ingredients,
+        'equipment': [equipmentPool[i % equipmentPool.length]],
+        'allergyTags': const <String>[],
+        'stepsDetailed': stepsDetailed,
+        'steps': steps,
+      };
+
+      generated.add(
+        _RecipeMatch(
+          recipe: recipe,
+          score: math.max(60, 82 - i * 4),
+          missing: const [],
+        ),
+      );
+    }
+
+    return generated;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final recipes = _recipes;
+    final matches = _buildRecipeMatches();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -384,7 +714,7 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Basées sur ton frigo (${widget.items.length} ingrédients)',
+                          'Basées sur ton frigo (${matches.length} recettes compatibles)',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: AppColors.primaryBlue,
                             fontWeight: FontWeight.w600,
@@ -396,43 +726,86 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
                   ),
                 ),
               ),
-              SliverPadding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 0)
-                        .copyWith(bottom: 180),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final recipe = recipes[index];
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: index == recipes.length - 1 ? 0 : 28),
-                        child: _RecipeCard(
-                          recipe: recipe,
-                          isFavorite: widget.isFavorite(recipe),
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => RecipeDetailSheet(
-                                recipe: recipe,
-                                matchScore: 90 - (index * 4),
-                                isFavorite: widget.isFavorite(recipe),
-                                onToggleFavorite: () {
-                                  widget.onToggleFavorite(recipe);
-                                  setState(() {});
-                                },
-                                onSelectTab: widget.onSelectTab,
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    childCount: recipes.length,
+              if (matches.isEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
+                    child: GlassContainer(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                      borderRadius: 32,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.search_off_rounded,
+                            size: 34,
+                            color: AppColors.primaryBlue,
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'Aucune recette parfaite',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primaryBlue,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Ajoute d’autres aliments ou ajuste tes préférences (allergies, équipement) pour découvrir de nouvelles idées adaptées.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 0)
+                          .copyWith(bottom: 180),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final match = matches[index];
+                        final recipe = match.recipe;
+                        return Padding(
+                          padding:
+                              EdgeInsets.only(bottom: index == matches.length - 1 ? 0 : 28),
+                          child: _RecipeCard(
+                            recipe: recipe,
+                            matchScore: match.score,
+                            missing: match.missing,
+                            isFavorite: widget.isFavorite(recipe),
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => RecipeDetailSheet(
+                                  recipe: recipe,
+                                  matchScore: match.score,
+                                  missingIngredients: match.missing,
+                                  isFavorite: widget.isFavorite(recipe),
+                                  onToggleFavorite: () {
+                                    widget.onToggleFavorite(recipe);
+                                    setState(() {});
+                                  },
+                                  onSelectTab: widget.onSelectTab,
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      childCount: matches.length,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           Positioned(
@@ -455,11 +828,15 @@ class _RecipeCard extends StatelessWidget {
     required this.recipe,
     required this.onTap,
     required this.isFavorite,
+    this.matchScore = 100,
+    this.missing = const [],
   });
 
   final Map<String, dynamic> recipe;
   final VoidCallback onTap;
   final bool isFavorite;
+  final int matchScore;
+  final List<String> missing;
 
   @override
   Widget build(BuildContext context) {
@@ -517,6 +894,34 @@ class _RecipeCard extends StatelessWidget {
                           color: AppColors.primaryBlue,
                         ),
                       ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.blur_circular,
+                            size: 16,
+                            color: AppColors.primaryBlue,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$matchScore% match frigo',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: AppColors.primaryBlue,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (missing.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          'À prévoir : ${missing.join(', ')}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -543,6 +948,18 @@ class _RecipeCard extends StatelessWidget {
       ],
     );
   }
+}
+
+class _RecipeMatch {
+  const _RecipeMatch({
+    required this.recipe,
+    required this.score,
+    required this.missing,
+  });
+
+  final Map<String, dynamic> recipe;
+  final int score;
+  final List<String> missing;
 }
 
 class FavoriteRecipesPage extends StatefulWidget {
@@ -614,6 +1031,7 @@ class _FavoriteRecipesPageState extends State<FavoriteRecipesPage> {
                           return _RecipeCard(
                             recipe: recipe,
                             isFavorite: widget.isFavorite(recipe),
+                            missing: const [],
                             onTap: () {
                               showModalBottomSheet(
                                 context: context,
@@ -622,6 +1040,7 @@ class _FavoriteRecipesPageState extends State<FavoriteRecipesPage> {
                                 builder: (_) => RecipeDetailSheet(
                                   recipe: recipe,
                                   matchScore: 95,
+                                  missingIngredients: const [],
                                   isFavorite: widget.isFavorite(recipe),
                                   onToggleFavorite: () {
                                     widget.onToggleFavorite(recipe);
@@ -833,6 +1252,7 @@ class RecipeDetailSheet extends StatefulWidget {
     required this.isFavorite,
     required this.onToggleFavorite,
     this.onSelectTab,
+    this.missingIngredients = const [],
   });
 
   final Map<String, dynamic> recipe;
@@ -840,6 +1260,7 @@ class RecipeDetailSheet extends StatefulWidget {
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
   final void Function(DockTab tab)? onSelectTab;
+  final List<String> missingIngredients;
 
   @override
   State<RecipeDetailSheet> createState() => _RecipeDetailSheetState();
@@ -1033,24 +1454,33 @@ class _RecipeDetailSheetState extends State<RecipeDetailSheet> {
                                             ),
                                           ),
                                           const SizedBox(height: 12),
-                                          Wrap(
-                                            spacing: 6,
-                                            runSpacing: 8,
-                                            children: [
-                                              _infoChip(Icons.access_time, time, theme),
-                                              _infoChip(Icons.person_outline, _servingsLabel, theme),
-                                              _infoChip(
-                                                Icons.local_fire_department,
-                                                difficulty,
-                                                theme,
-                                              ),
-                                              _infoChip(
-                                                Icons.star_rounded,
-                                                'Match ${widget.matchScore}%',
-                                                theme,
-                                              ),
-                                            ],
-                                          ),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 8,
+                        children: [
+                          _infoChip(Icons.access_time, time, theme),
+                          _infoChip(Icons.person_outline, _servingsLabel, theme),
+                          _infoChip(
+                            Icons.local_fire_department,
+                            difficulty,
+                            theme,
+                          ),
+                          _infoChip(
+                            Icons.star_rounded,
+                            'Match ${widget.matchScore}%',
+                            theme,
+                          ),
+                        ],
+                      ),
+                      if (widget.missingIngredients.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          'À prévoir : ${widget.missingIngredients.join(', ')}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
                                           const SizedBox(height: 14),
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,

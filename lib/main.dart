@@ -324,7 +324,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     if (_hasCompletedOnboarding!) {
-      return FrigoPage(user: user);
+      return FrigoPage(
+        user: user,
+        preferences: _cachedPreferences,
+      );
     }
 
     return OnboardingFlow(
@@ -747,7 +750,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
 // ==================== FRIGO PAGE ====================
 class FrigoPage extends StatefulWidget {
   final User user;
-  const FrigoPage({super.key, required this.user});
+  final FoodPreferences? preferences;
+  const FrigoPage({super.key, required this.user, this.preferences});
 
   @override
   State<FrigoPage> createState() => _FrigoPageState();
@@ -763,9 +767,24 @@ class _FrigoPageState extends State<FrigoPage> {
   final List<Map<String, dynamic>> _favoriteRecipes = [];
   final LayerLink _menuLayerLink = LayerLink();
   OverlayEntry? _menuOverlayEntry;
+  FoodPreferences? _preferences;
 
   // Backend URL: change to your deployed backend for production
   static const String backendUrl = 'http://localhost:8080/api/fridge';
+
+  @override
+  void initState() {
+    super.initState();
+    _preferences = widget.preferences;
+  }
+
+  @override
+  void didUpdateWidget(covariant FrigoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.preferences != oldWidget.preferences) {
+      _preferences = widget.preferences;
+    }
+  }
 
   Future<void> _pickAndUpload() async {
     try {
@@ -858,6 +877,14 @@ class _FrigoPageState extends State<FrigoPage> {
     await FirebaseAuth.instance.signOut();
   }
 
+  Future<void> _refreshPreferences() async {
+    final latest = await FoodPreferences.loadForUser(widget.user.uid);
+    if (!mounted) return;
+    setState(() {
+      _preferences = latest;
+    });
+  }
+
   void _toggleFavoriteRecipe(Map<String, dynamic> recipe) {
     setState(() {
       final index =
@@ -882,6 +909,7 @@ class _FrigoPageState extends State<FrigoPage> {
       builder: (_) => RecipeDetailSheet(
         recipe: recipe,
         matchScore: 95,
+        missingIngredients: const [],
         isFavorite: _isFavoriteRecipe(recipe),
         onToggleFavorite: () => _toggleFavoriteRecipe(recipe),
         onSelectTab: _handleDockNavigation,
@@ -905,6 +933,7 @@ class _FrigoPageState extends State<FrigoPage> {
       MaterialPageRoute(
         builder: (_) => RecipeSuggestionsPage(
           items: _allItems.toList(),
+          preferences: _preferences,
           onToggleFavorite: (recipe) => _toggleFavoriteRecipe(recipe),
           isFavorite: _isFavoriteRecipe,
           onSelectTab: (tab) {
@@ -1016,7 +1045,8 @@ class _FrigoPageState extends State<FrigoPage> {
         builder: (_) => OnboardingFlow(
           userId: widget.user.uid,
           existingPreferences: existingPrefs,
-          onComplete: () {
+          onComplete: () async {
+            await _refreshPreferences();
             if (mounted) Navigator.of(context).pop();
           },
         ),
