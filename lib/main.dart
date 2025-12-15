@@ -16,6 +16,7 @@ import 'models/food_preferences.dart';
 import 'screens/home/scan_and_recipes.dart';
 import 'screens/onboarding/onboarding_flow.dart';
 import 'ui/design_system.dart';
+import 'utils/auth_settings.dart';
 
 const _fridgeImageAsset = 'assets/images/fridge_bg_v2.png';
 
@@ -49,7 +50,7 @@ class AuthWrapper extends StatefulWidget {
   State<AuthWrapper> createState() => _AuthWrapperState();
 }
 
-class _AuthWrapperState extends State<AuthWrapper> {
+class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -66,24 +67,67 @@ class _AuthWrapperState extends State<AuthWrapper> {
   bool _isAppleLoading = false;
   String? _errorMessage;
   String? _firstName;
+  bool _stayLoggedIn = false; // Unchecked by default (opt-in)
+  bool _isNewLogin = false; // Flag to prevent auto-logout on new sign-in
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _authSubscription =
         FirebaseAuth.instance.authStateChanges().listen(_handleAuthStateChange);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _authSubscription?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // When app goes to background or is paused/detached, check stay logged in
+    if (state == AppLifecycleState.paused || 
+        state == AppLifecycleState.detached) {
+      _handleAppPause();
+    }
+  }
+
+  Future<void> _handleAppPause() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final shouldStayLoggedIn = await AuthSettings.loadStayLoggedIn();
+      if (!shouldStayLoggedIn) {
+        // User didn't check "stay logged in" - sign them out when app closes
+        await FirebaseAuth.instance.signOut();
+        await AuthSettings.clearStayLoggedIn();
+      }
+    }
+  }
+
   Future<void> _handleAuthStateChange(User? user) async {
     if (!mounted) return;
+
+    // Only check stay logged in on app startup (not on new sign-in)
+    if (user != null && !_isNewLogin) {
+      final shouldStayLoggedIn = await AuthSettings.loadStayLoggedIn();
+      if (!shouldStayLoggedIn) {
+        // User didn't check "stay logged in" - sign them out
+        await FirebaseAuth.instance.signOut();
+        await AuthSettings.clearStayLoggedIn();
+        return;
+      }
+    }
+    
+    // Reset flag after first auth change
+    if (_isNewLogin) {
+      _isNewLogin = false;
+    }
 
     setState(() {
       _currentUser = user;
@@ -123,12 +167,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _signInWithGoogle() async {
+    // Ask user if they want to stay logged in
+    final stayLoggedIn = await _showStayLoggedInDialog();
+    if (stayLoggedIn == null) return; // User cancelled
+    
     setState(() {
       _isGoogleLoading = true;
       _errorMessage = null;
     });
 
     try {
+      // Save preference BEFORE sign-in
+      await AuthSettings.saveStayLoggedIn(stayLoggedIn);
+      _isNewLogin = true;
       if (kIsWeb) {
         final googleProvider = GoogleAuthProvider()..addScope('email');
         await FirebaseAuth.instance.signInWithPopup(googleProvider);
@@ -174,6 +225,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
       _isLoading = true;
       _errorMessage = null;
     });
+
+    // Save preference BEFORE sign-in
+    await AuthSettings.saveStayLoggedIn(_stayLoggedIn);
+    _isNewLogin = true;
 
     try {
       if (_isLoginMode) {
@@ -236,6 +291,63 @@ class _AuthWrapperState extends State<AuthWrapper> {
         .trim();
   }
 
+  Future<bool?> _showStayLoggedInDialog() async {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        bool stayLoggedIn = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: const Text(
+                'Rester connecté ?',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Voulez-vous rester connecté même après avoir fermé l\'application ?',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  _StayLoggedInCheckbox(
+                    value: stayLoggedIn,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        stayLoggedIn = value ?? false;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('Annuler'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(stayLoggedIn),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text('Continuer'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _promptForFirstName() async {
     final controller = TextEditingController(text: _firstName ?? '');
     final result = await showDialog<String>(
@@ -287,12 +399,21 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _signInWithApple() async {
+    // Ask user if they want to stay logged in
+    final stayLoggedIn = await _showStayLoggedInDialog();
+    if (stayLoggedIn == null) return; // User cancelled
+    
     setState(() {
       _isAppleLoading = true;
       _errorMessage = null;
     });
 
     try {
+      // TODO: Implement Apple Sign-In
+      // When implemented:
+      // await AuthSettings.saveStayLoggedIn(stayLoggedIn);
+      // _isNewLogin = true;
+      // ... Apple sign-in code ...
       setState(() {
         _errorMessage = 'Apple Sign-In coming soon';
       });
@@ -712,6 +833,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
               return null;
             },
           ),
+          const SizedBox(height: 20),
+          _StayLoggedInCheckbox(
+            value: _stayLoggedIn,
+            onChanged: (value) {
+              setState(() {
+                _stayLoggedIn = value ?? false;
+              });
+            },
+          ),
           const SizedBox(height: 24),
           LiquidGlassButton(
             onPressed: _isLoading ? null : _submit,
@@ -747,6 +877,52 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 }
+
+// ==================== STAY LOGGED IN CHECKBOX ====================
+class _StayLoggedInCheckbox extends StatelessWidget {
+  const _StayLoggedInCheckbox({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primaryBlue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => onChanged(!value),
+            child: Text(
+              'Rester connecté',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textPrimary.withOpacity(0.85),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ==================== FRIGO PAGE ====================
 class FrigoPage extends StatefulWidget {
   final User user;
@@ -855,7 +1031,7 @@ class _FrigoPageState extends State<FrigoPage> {
           );
         }
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur: $e')),
       );
@@ -1846,5 +2022,89 @@ class _DashedBorderPainter extends CustomPainter {
         oldDelegate.dashLength != dashLength ||
         oldDelegate.gapLength != gapLength ||
         oldDelegate.gradient != gradient;
+  }
+}
+
+// ==================== LIQUID ENTRANCE ANIMATION ====================
+class LiquidEntrance extends StatefulWidget {
+  const LiquidEntrance({
+    super.key,
+    required this.child,
+    this.offset = const Offset(0, 40),
+    this.duration = const Duration(milliseconds: 600),
+    this.delay = Duration.zero,
+  });
+
+  final Widget child;
+  final Offset offset;
+  final Duration duration;
+  final Duration delay;
+
+  @override
+  State<LiquidEntrance> createState() => _LiquidEntranceState();
+}
+
+class _LiquidEntranceState extends State<LiquidEntrance>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.65, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: widget.offset,
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    Future.delayed(widget.delay, () {
+      if (mounted) {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: _slideAnimation.value,
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
+    );
   }
 }
