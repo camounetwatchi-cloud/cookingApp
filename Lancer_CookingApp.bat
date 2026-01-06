@@ -47,13 +47,13 @@ if exist "pubspec.yaml" (
     echo.
     echo ================================================================
     echo   L'APPLICATION VA MAINTENANT DEMARRER.
-    echo   Cible par defaut : Windows ^(Desktop^)
+    echo   Cible par defaut : Google Chrome ^(Web^)
     echo   Veuillez patienter pendant la compilation...
     echo ================================================================
     echo.
-    :: Lancement de l'application sur Windows (Desktop)
-    :: Si vous voulez lancer sur un portable, branchez-le et remplacez '-d windows' par '-d android' ou retirez-le.
-    call flutter run -d windows
+    :: Lancement de l'application sur Chrome (Web)
+    :: Si vous voulez lancer sur un autre appareil, changez '-d chrome' par '-d windows' ou '-d android'.
+    call flutter run -d chrome
 ) else (
     echo [ERREUR] Fichier 'pubspec.yaml' introuvable ! 
     echo Assurez-vous d'etre dans le bon dossier.
