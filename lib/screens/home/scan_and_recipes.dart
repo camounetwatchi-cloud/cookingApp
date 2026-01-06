@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../models/food_preferences.dart';
 import '../../ui/design_system.dart';
+import '../../services/recipe_service.dart';
 
 enum DockTab { home, scanner, favorites }
 
@@ -187,6 +188,54 @@ class RecipeSuggestionsPage extends StatefulWidget {
 }
 
 class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
+  // State for AI-generated recipes
+  bool _isLoadingAI = true;
+  bool _aiLoadFailed = false;
+  List<Map<String, dynamic>> _aiRecipes = [];
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadAIRecipes();
+  }
+  
+  /// Load recipes from AI
+  Future<void> _loadAIRecipes() async {
+    setState(() {
+      _isLoadingAI = true;
+      _aiLoadFailed = false;
+      _aiRecipes.clear(); // Clear old recipes
+    });
+    
+    try {
+      final recipes = await RecipeService.generateRecipes(
+        ingredients: widget.items,
+        preferences: widget.preferences,
+        maxRecipes: 6,
+      );
+      
+      if (recipes != null && recipes.isNotEmpty) {
+        setState(() {
+          _aiRecipes = recipes;
+          _isLoadingAI = false;
+          _aiLoadFailed = false;
+        });
+      } else {
+        // Failed to get AI recipes, use fallback
+        setState(() {
+          _isLoadingAI = false;
+          _aiLoadFailed = true;
+        });
+      }
+    } catch (e) {
+      print('Error loading AI recipes: $e');
+      setState(() {
+        _isLoadingAI = false;
+        _aiLoadFailed = true;
+      });
+    }
+  }
+  
   static final List<Map<String, dynamic>> _baseRecipes = [
         {
           'title': 'Bœuf sauté aux pâtes',
@@ -480,6 +529,11 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
       ];
 
   List<_RecipeMatch> _buildRecipeMatches() {
+    // Use AI recipes if available, otherwise use base recipes
+    final recipesToUse = (_aiRecipes.isNotEmpty && !_aiLoadFailed) 
+        ? _aiRecipes 
+        : _baseRecipes;
+    
     final normalizedInventory = _normalizeSet(widget.items);
     final expandedInventory = _expandInventory(normalizedInventory);
     expandedInventory.addAll(_defaultPantryItems);
@@ -505,7 +559,7 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
     final fallbackMatches = <_RecipeMatch>[];
     const adaptiveThreshold = 0.1;
 
-    for (final recipe in _baseRecipes) {
+    for (final recipe in recipesToUse) {
       final ingredientData = (recipe['ingredients'] as List)
           .map((item) => (item as Map).map((key, value) => MapEntry(key.toString(), value)))
           .toList();
@@ -713,12 +767,32 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          'Basées sur ton frigo (${matches.length} recettes compatibles)',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.primaryBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        Row(
+                          children: [
+                            if (_isLoadingAI)
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation(AppColors.primaryBlue),
+                                ),
+                              ),
+                            if (_isLoadingAI) const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _isLoadingAI
+                                    ? 'Génération de recettes par IA...'
+                                    : _aiRecipes.isNotEmpty
+                                        ? '✨ Recettes générées par IA (${matches.length} recettes)'
+                                        : 'Basées sur ton frigo (${matches.length} recettes compatibles)',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.primaryBlue,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 20),
                       ],
@@ -895,24 +969,6 @@ class _RecipeCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.blur_circular,
-                            size: 16,
-                            color: AppColors.primaryBlue,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '$matchScore% match frigo',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: AppColors.primaryBlue,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
                       if (missing.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
@@ -1463,11 +1519,6 @@ class _RecipeDetailSheetState extends State<RecipeDetailSheet> {
                           _infoChip(
                             Icons.local_fire_department,
                             difficulty,
-                            theme,
-                          ),
-                          _infoChip(
-                            Icons.star_rounded,
-                            'Match ${widget.matchScore}%',
                             theme,
                           ),
                         ],
