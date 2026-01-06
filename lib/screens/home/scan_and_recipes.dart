@@ -35,7 +35,7 @@ const Map<String, String> _diacriticMap = {
 };
 
 const List<String> _defaultDishImages = [
-  'https://images.unsplash.com/photo-1484723091739-33f42a6e711c?auto=format&fit=crop&w=900&q=80',
+  'https://images.unsplash.com/photo-1473093226795-af9932fe5856?auto=format&fit=crop&w=900&q=80',
   'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80',
   'https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=900&q=80',
   'https://images.unsplash.com/photo-1478145046317-39f10e56b5e9?auto=format&fit=crop&w=900&q=80',
@@ -243,7 +243,7 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
           'difficulty': 'Facile',
           'servings': '1 personne',
           'image':
-              'https://images.unsplash.com/photo-1484723091739-33f42a6e711c?auto=format&fit=crop&w=900&q=80',
+              'https://images.unsplash.com/photo-1473093226795-af9932fe5856?auto=format&fit=crop&w=900&q=80',
           'ingredients': [
             {'name': 'Pâtes fraîches', 'quantity': '200 g'},
             {'name': 'Tomates pelées', 'quantity': '400 g'},
@@ -529,6 +529,11 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
       ];
 
   List<_RecipeMatch> _buildRecipeMatches() {
+    // Don't show any recipes while AI is generating
+    if (_isLoadingAI) {
+      return [];
+    }
+    
     // Use AI recipes if available, otherwise use base recipes
     final recipesToUse = (_aiRecipes.isNotEmpty && !_aiLoadFailed) 
         ? _aiRecipes 
@@ -804,37 +809,39 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
-                    child: GlassContainer(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-                      borderRadius: 32,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.search_off_rounded,
-                            size: 34,
-                            color: AppColors.primaryBlue,
+                    child: _isLoadingAI 
+                      ? _buildLoadingWidget(theme)
+                      : GlassContainer(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                          borderRadius: 32,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.search_off_rounded,
+                                size: 34,
+                                color: AppColors.primaryBlue,
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'Aucune recette parfaite',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primaryBlue,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Ajoute d\'autres aliments ou ajuste tes préférences (allergies, équipement) pour découvrir de nouvelles idées adaptées.',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textPrimary,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 14),
-                          Text(
-                            'Aucune recette parfaite',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryBlue,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Ajoute d’autres aliments ou ajuste tes préférences (allergies, équipement) pour découvrir de nouvelles idées adaptées.',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textPrimary,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
                   ),
                 )
               else
@@ -892,6 +899,48 @@ class _RecipeSuggestionsPageState extends State<RecipeSuggestionsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingWidget(ThemeData theme) {
+    return Center(
+      child: GlassContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        borderRadius: 32,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 60,
+              width: 60,
+              child: CircularProgressIndicator(
+                strokeWidth: 4,
+                valueColor: AlwaysStoppedAnimation(AppColors.primaryBlue),
+                backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Les recettes sont en\ncours de génération',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryBlue,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Nos chefs IA préparent des menus\nsur mesure pour toi...',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

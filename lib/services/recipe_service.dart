@@ -9,28 +9,54 @@ class RecipeService {
   /// 
   /// Returns a list of recipe maps containing title, ingredients, steps, etc.
   /// Returns null if the API call fails.
+  static bool _useSecondaryModel = false;
+
+  // List of fallback models to ensure high availability
+  static const List<String> _fallbackModels = [
+    'google/gemini-2.0-flash-exp:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'mistralai/mistral-7b-instruct:free',
+  ];
+
+  /// Generate recipes based on available ingredients and user preferences
+  /// 
+  /// Returns a list of recipe maps containing title, ingredients, steps, etc.
+  /// Returns null if the API call fails.
   static Future<List<Map<String, dynamic>>?> generateRecipes({
     required List<String> ingredients,
     FoodPreferences? preferences,
     int maxRecipes = 6,
   }) async {
-    try {
-      final prompt = _buildPrompt(ingredients, preferences, maxRecipes);
-      
-      final response = await http.post(
-        Uri.parse('${ApiConfig.openRouterBaseUrl}/chat/completions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${ApiConfig.openRouterApiKey}',
-          'HTTP-Referer': ApiConfig.appUrl,
-          'X-Title': ApiConfig.appName,
-        },
-        body: jsonEncode({
-          'model': ApiConfig.modelName,
-          'messages': [
-            {
-              'role': 'system',
-              'content': '''Tu es un chef cuisinier expert spécialisé dans la cuisine "anti-gaspi". 
+    final prompt = _buildPrompt(ingredients, preferences, maxRecipes);
+    
+    // Create prioritized list of models to try
+    // 1. Primary config model
+    // 2. Secondary config model (if different)
+    // 3. Hardcoded high-quality free fallbacks
+    final modelsToTry = <String>{
+      ApiConfig.modelName,
+      if (ApiConfig.secondaryModelName != ApiConfig.modelName) ApiConfig.secondaryModelName,
+      ..._fallbackModels,
+    }.toList();
+
+    for (final model in modelsToTry) {
+      try {
+        print('🚀 Generating recipes using model: $model');
+        
+        final response = await http.post(
+          Uri.parse('${ApiConfig.openRouterBaseUrl}/chat/completions'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${ApiConfig.openRouterApiKey}',
+            'HTTP-Referer': ApiConfig.appUrl,
+            'X-Title': ApiConfig.appName,
+          },
+          body: jsonEncode({
+            'model': model,
+            'messages': [
+              {
+                'role': 'system',
+                'content': '''Tu es un chef cuisinier expert spécialisé dans la cuisine "anti-gaspi". 
 Ta mission est de proposer des recettes RÉALISTES à partir d'une liste d'ingrédients.
 
 RÈGLES STRICTES :
@@ -42,38 +68,44 @@ RÈGLES STRICTES :
 6. PRIORITÉ : Si un ingrédient est complexe (ex: "quiche" sous-entend une pâte), utilise-le comme base.
 7. FORMAT : Réponds toujours sous forme de JSON structuré.
 8. STYLE : Enlève les adverbes inutiles des recettes, sois direct et précis.
-9. IMAGES : Pour chaque recette, fournis TOUJOURS une URL d'image Unsplash pertinente pour illustrer le plat.
-
-Si les ingrédients fournis ne permettent pas de faire une recette mangeable, réponds : {"erreur": "Combinaison impossible"}.
+9. IMAGES : Ne fournis PAS d'URL d'image, nous la générons nous-mêmes.
+10. Si les ingrédients fournis ne permettent pas de faire une recette mangeable, réponds : {"erreur": "Combinaison impossible"}.
 Tu réponds toujours en JSON valide uniquement, sans texte avant ou après.'''
-            },
-            {
-              'role': 'user',
-              'content': prompt,
-            }
-          ],
-          'temperature': 0.7,
-          'max_tokens': 4000,
-        }),
-      );
+              },
+              {
+                'role': 'user',
+                'content': prompt,
+              }
+            ],
+            'temperature': 0.7,
+            'max_tokens': 4000,
+          }),
+        );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'] as String;
-        
-        // Parse the JSON response
-        final recipes = _parseRecipesFromResponse(content);
-        return recipes;
-      } else {
-        print('OpenRouter API error: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        return null;
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final content = data['choices'][0]['message']['content'] as String;
+          
+          // Parse the JSON response
+          final recipes = _parseRecipesFromResponse(content);
+          if (recipes.isNotEmpty) {
+            print('✅ Success with model: $model');
+            return recipes;
+          } else {
+             print('⚠️ Model $model returned empty or invalid recipes. Trying next...');
+          }
+        } else {
+          print('❌ Error with model $model: ${response.statusCode} - ${response.body}');
+          // Continue to next model loop
+        }
+      } catch (e) {
+        print('❌ Exception with model $model: $e');
+        // Continue to next model loop
       }
-    } catch (e, stackTrace) {
-      print('Error generating recipes: $e');
-      print('Stack trace: $stackTrace');
-      return null;
     }
+
+    print('❌ All models failed to generate recipes.');
+    return null;
   }
 
   /// Build the prompt for the AI based on ingredients and preferences
@@ -123,12 +155,11 @@ Tu réponds toujours en JSON valide uniquement, sans texte avant ou après.'''
       "time": "15 min",
       "difficulty": "Facile",
       "servings": "2 personnes",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
+      "equipment": ["Plaques de cuisson", "Poêle"],
       "ingredients": [
         {"name": "Tomates", "quantity": "200 g"},
         {"name": "Pâtes", "quantity": "150 g"}
       ],
-      "equipment": ["Plaques de cuisson", "Poêle"],
       "allergyTags": ["Gluten"],
       "steps": [
         "Faire bouillir l'eau salée et cuire les pâtes 10 min.",
@@ -181,11 +212,16 @@ Tu réponds toujours en JSON valide uniquement, sans texte avant ou après.'''
         final recipeMap = recipe as Map<String, dynamic>;
         final title = recipeMap['title'] ?? 'Recette sans nom';
         
-        // Robust image fallback
-        String imageUrl = recipeMap['image'] ?? '';
-        if (imageUrl.isEmpty || !imageUrl.startsWith('http')) {
-          imageUrl = _getPlaceholderImage(title);
-        }
+        // Generate consistently styled image using Pollinations AI
+        // 1. Sanitize title (remove accents/special chars) to avoid URL issues
+        final cleanTitle = _removeDiacritics(title);
+        final encodedTitle = Uri.encodeComponent(cleanTitle);
+        
+        // 2. Build Pollinations URL
+        final pollinationsUrl = 'https://image.pollinations.ai/prompt/professional_food_photography_of_${encodedTitle}_flat_lay_top_view_centered_on_white_porcelain_plate_minimalist_clean_background_soft_studio_lighting_high_contrast_8k?nologo=true';
+        
+        // 3. Use wsrv.nl proxy to bypass 403/CORS issues and ensure delivery
+        final imageUrl = 'https://wsrv.nl/?url=${Uri.encodeComponent(pollinationsUrl)}&output=webp';
         
         // Ensure all required fields exist with defaults
         return {
@@ -208,30 +244,16 @@ Tu réponds toujours en JSON valide uniquement, sans texte avant ou après.'''
     }
   }
 
-  /// Get a relevant placeholder image based on the recipe title
-  static String _getPlaceholderImage(String title) {
-    final t = title.toLowerCase();
-    
-    if (t.contains('pasta') || t.contains('pâte') || t.contains('spaghetti')) {
-      return 'https://images.unsplash.com/photo-1473093226795-af9932fe5856';
+  /// Remove accents and diacritics from string for safer URLs
+  static String _removeDiacritics(String str) {
+    var withDia = 'ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëðÇçÐÌÍÎÏìíîïÙÚÛÜùúûüÑñŠšŸÿýŽž';
+    var withoutDia = 'AAAAAAaaaaaaOOOOOOooooooEEEEeeeedCcDIIIIiiiiUUUUuuuuNnSsYyyZz'; // Corresponding ASCII chars
+
+    for (int i = 0; i < withDia.length; i++) {
+      str = str.replaceAll(withDia[i], withoutDia[i]);
     }
-    if (t.contains('salade') || t.contains('salad') || t.contains('légume')) {
-      return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd';
-    }
-    if (t.contains('soupe') || t.contains('soup') || t.contains('potage')) {
-      return 'https://images.unsplash.com/photo-1547592166-23ac45744acd';
-    }
-    if (t.contains('dessert') || t.contains('gâteau') || t.contains('chocolat') || t.contains('sucré')) {
-      return 'https://images.unsplash.com/photo-1488477181946-6428a0291777';
-    }
-    if (t.contains('poulet') || t.contains('chicken') || t.contains('viande') || t.contains('beef') || t.contains('bœuf')) {
-      return 'https://images.unsplash.com/photo-1432139555190-58524dae6a55';
-    }
-    if (t.contains('poisson') || t.contains('fish') || t.contains('saumon')) {
-      return 'https://images.unsplash.com/photo-1467003909585-2f8a72700288';
-    }
-    
-    // Default high-quality food image
-    return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836';
+    return str;
   }
 }
+
+
