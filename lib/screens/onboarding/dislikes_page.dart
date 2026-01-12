@@ -69,156 +69,162 @@ class _DislikesPageState extends State<DislikesPage> {
 
     return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 28),
-              Text(
-                "Dernière étape !\nCe que tu n'aimes pas",
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  height: 1.05,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'On personnalisera tes recettes\nselon tes goûts',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primaryBlue,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: List.generate(3, (index) {
-                  final isSelected = _spiceLevel == index;
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        left: index == 0 ? 0 : 6,
-                        right: index == 2 ? 0 : 6,
-                      ),
-                      child: SelectableGlassButton(
-                        isSelected: isSelected,
-                        onTap: () {
-                          setState(() {
-                            _spiceLevel = index;
-                            _spiceSliderValue = index.toDouble();
-                          });
-                          widget.onUpdateSpice?.call(_spiceLevel);
-                        },
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        child: Text(
-                          _spiceLevels[index],
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: isSelected ? Colors.white : AppColors.textPrimary,
-                          ),
-                          textAlign: TextAlign.center,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 28),
+                      Text(
+                        "Dernière étape !\nCe que tu n'aimes pas",
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          height: 1.05,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 20),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: AppColors.primaryBlue.withOpacity(0.14),
-                  inactiveTrackColor: AppColors.textMuted.withOpacity(0.12),
-                  trackHeight: 6,
-                  thumbColor: Colors.white,
-                  thumbShape: const CustomThumbShape(),
-                  overlayColor: AppColors.primaryBlue.withOpacity(0.16),
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
-                ),
-                child: Slider(
-                  value: _spiceSliderValue,
-                  min: 0,
-                  max: 2,
-                  activeColor: AppColors.primaryBlue,
-                  onChanged: (value) {
-                    setState(() {
-                      _spiceSliderValue = value;
-                      final newLevel = value.clamp(0, 2).round();
-                      if (newLevel != _spiceLevel) {
-                        _spiceLevel = newLevel;
-                widget.onUpdateSpice?.call(_spiceLevel);
-                      }
-                    });
-                  },
-                ),
-              ),
-              const Spacer(),
-              Text(
-                'Si tu veux indique simplement ce\nque tu n’aimes pas',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primaryBlue,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 14),
-              GlassContainer(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                borderRadius: 18,
-                backgroundOpacity: 0.28,
-                strokeOpacity: 0.2,
-                child: Row(
-                  children: [
-                    Icon(Icons.search, color: AppColors.textMuted, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Ajoute un ingrédient',
-                          hintStyle: TextStyle(color: AppColors.textMuted),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      const SizedBox(height: 12),
+                      Text(
+                        'On personnalisera tes recettes\nselon tes goûts',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.primaryBlue,
+                          height: 1.4,
                         ),
-                        onSubmitted: _addDislike,
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    Icon(Icons.mic, color: AppColors.textMuted, size: 20),
-                  ],
-                ),
-              ),
-              if (_dislikedItems.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 14),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _dislikedItems.map((item) {
-                      return GlassContainer(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        borderRadius: 16,
-                        backgroundOpacity: 0.22,
-                        strokeOpacity: 0.18,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(item, style: theme.textTheme.bodyMedium),
-                            const SizedBox(width: 6),
-                            GestureDetector(
-                              onTap: () => _removeDislike(item),
-                              child: Icon(Icons.close, size: 16, color: AppColors.textMuted),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: List.generate(3, (index) {
+                          final isSelected = _spiceLevel == index;
+                          return Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                left: index == 0 ? 0 : 6,
+                                right: index == 2 ? 0 : 6,
+                              ),
+                              child: SelectableGlassButton(
+                                isSelected: isSelected,
+                                onTap: () {
+                                  setState(() {
+                                    _spiceLevel = index;
+                                    _spiceSliderValue = index.toDouble();
+                                  });
+                                  widget.onUpdateSpice?.call(_spiceLevel);
+                                },
+                                child: Text(
+                                  _spiceLevels[index],
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
                             ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 20),
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: AppColors.primaryBlue.withValues(alpha: 0.14),
+                          inactiveTrackColor: AppColors.textMuted.withValues(alpha: 0.12),
+                          trackHeight: 6,
+                          thumbColor: Colors.white,
+                          overlayColor: AppColors.primaryBlue.withValues(alpha: 0.16),
+                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+                        ),
+                        child: Slider(
+                          value: _spiceSliderValue,
+                          min: 0,
+                          max: 2,
+                          activeColor: AppColors.primaryBlue,
+                          onChanged: (value) {
+                            setState(() {
+                              _spiceSliderValue = value;
+                              final newLevel = value.clamp(0, 2).round();
+                              if (newLevel != _spiceLevel) {
+                                _spiceLevel = newLevel;
+                                widget.onUpdateSpice?.call(_spiceLevel);
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      Text(
+                        'Si tu veux indique simplement ce\nque tu n’aimes pas',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.primaryBlue,
+                          height: 1.4,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 14),
+                      GlassContainer(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        borderRadius: 18,
+                        backgroundOpacity: 0.28,
+                        strokeOpacity: 0.2,
+                        child: Row(
+                          children: [
+                            Icon(Icons.search, color: AppColors.textMuted, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                decoration: InputDecoration(
+                                  hintText: 'Ajoute un ingrédient',
+                                  hintStyle: TextStyle(color: AppColors.textMuted),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onSubmitted: _addDislike,
+                              ),
+                            ),
+                            Icon(Icons.mic, color: AppColors.textMuted, size: 20),
                           ],
                         ),
-                      );
-                    }).toList(),
+                      ),
+                      if (_dislikedItems.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 14),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _dislikedItems.map((item) {
+                              return GlassContainer(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                borderRadius: 16,
+                                backgroundOpacity: 0.22,
+                                strokeOpacity: 0.18,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(item, style: theme.textTheme.bodyMedium),
+                                    const SizedBox(width: 6),
+                                    GestureDetector(
+                                      onTap: () => _removeDislike(item),
+                                      child: Icon(Icons.close, size: 16, color: AppColors.textMuted),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      const SizedBox(height: 160),
+                    ],
                   ),
                 ),
-              const Spacer(flex: 2),
-              const SizedBox(height: 140),
-            ],
-          ),
+              ),
+            );
+          },
         ),
         Positioned(
           left: 0,
@@ -234,46 +240,4 @@ class _DislikesPageState extends State<DislikesPage> {
   }
 }
 
-class CustomThumbShape extends SliderComponentShape {
-  const CustomThumbShape();
 
-  @override
-  Size getPreferredSize(bool isEnabled, bool isDiscrete) {
-    return const Size(28, 28);
-  }
-
-  @override
-  void paint(
-    PaintingContext context,
-    Offset center, {
-    required Animation<double> activationAnimation,
-    required Animation<double> enableAnimation,
-    required bool isDiscrete,
-    required TextPainter labelPainter,
-    required RenderBox parentBox,
-    required SliderThemeData sliderTheme,
-    required TextDirection textDirection,
-    required double value,
-    required double textScaleFactor,
-    required Size sizeWithOverflow,
-  }) {
-    final Canvas canvas = context.canvas;
-
-    final borderPaint = Paint()
-      ..color = const Color(0xFF4A9FFF)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-
-    final fillPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.1)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-
-    canvas.drawCircle(center + const Offset(0, 2), 12, shadowPaint);
-    canvas.drawCircle(center, 12, fillPaint);
-    canvas.drawCircle(center, 12, borderPaint);
-  }
-}

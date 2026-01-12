@@ -104,26 +104,13 @@ class _CuisinePreferencesPageState extends State<CuisinePreferencesPage> {
                     return SelectableGlassButton(
                       isSelected: isSelected,
                       onTap: () => _toggleCuisine(cuisine['name']!),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            cuisine['icon']!,
-                            style: const TextStyle(fontSize: 18),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              cuisine['name']!,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: isSelected ? Colors.white : AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        '${cuisine['icon']} ${cuisine['name']}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                        ),
                       ),
                     );
                   },

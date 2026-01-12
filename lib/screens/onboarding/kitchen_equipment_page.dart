@@ -98,15 +98,14 @@ class _KitchenEquipmentPageState extends State<KitchenEquipmentPage> {
                       isSelected: isSelected,
                       onTap: () => _toggleEquipment(item['name']!),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            item['icon']!,
-                            style: const TextStyle(fontSize: 20),
-                          ),
+                          Text(item['icon']!, style: const TextStyle(fontSize: 20)),
                           const SizedBox(width: 12),
                           Text(
                             item['name']!,
-                            style: theme.textTheme.bodyLarge?.copyWith(
+                            style: TextStyle(
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: isSelected ? Colors.white : AppColors.textPrimary,
                             ),

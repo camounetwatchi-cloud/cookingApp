@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/food_preferences.dart';
 import 'allergies_page.dart';
-import 'skill_level_page.dart';
 import 'pantry_basics_page.dart';
-import 'cuisine_preferences_page.dart';
 import 'kitchen_equipment_page.dart';
-import 'dislikes_page.dart';
 import '../../ui/design_system.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -27,16 +24,12 @@ class OnboardingFlow extends StatefulWidget {
 class _OnboardingFlowState extends State<OnboardingFlow> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  static const int _totalPages = 6;
+  static const int _totalPages = 3;
 
   // Preferences data
   late Set<String> _allergies;
-  late int _skillLevel;
   late Set<String> _pantryBasics;
-  late Set<String> _cuisinePreferences;
   late Set<String> _kitchenEquipment;
-  late int _spiceLevel;
-  late Set<String> _dislikedItems;
 
   @override
   void initState() {
@@ -44,20 +37,12 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     // Initialize with existing preferences or empty
     if (widget.existingPreferences != null) {
       _allergies = Set.from(widget.existingPreferences!.allergies);
-      _skillLevel = widget.existingPreferences!.skillLevel;
       _pantryBasics = Set.from(widget.existingPreferences!.pantryBasics);
-      _cuisinePreferences = Set.from(widget.existingPreferences!.cuisinePreferences);
       _kitchenEquipment = Set.from(widget.existingPreferences!.kitchenEquipment);
-      _spiceLevel = widget.existingPreferences!.spiceLevel;
-      _dislikedItems = Set.from(widget.existingPreferences!.dislikedItems);
     } else {
       _allergies = {};
-      _skillLevel = 0;
       _pantryBasics = {};
-      _cuisinePreferences = {};
       _kitchenEquipment = {};
-      _spiceLevel = 0;
-      _dislikedItems = {};
     }
   }
 
@@ -76,12 +61,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Future<void> _savePreferences() async {
     final prefs = FoodPreferences(
       allergies: _allergies,
-      skillLevel: _skillLevel,
       pantryBasics: _pantryBasics,
-      cuisinePreferences: _cuisinePreferences,
       kitchenEquipment: _kitchenEquipment,
-      spiceLevel: _spiceLevel,
-      dislikedItems: _dislikedItems,
+      // Keep defaults for removed fields
+      skillLevel: 0,
+      cuisinePreferences: const {},
+      spiceLevel: 0,
+      dislikedItems: const {},
     );
     
     await FoodPreferences.saveForUser(widget.userId, prefs);
@@ -105,10 +91,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
@@ -127,7 +112,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                     decoration: BoxDecoration(
                       color: isCompleted 
                           ? AppColors.primaryBlue
-                          : AppColors.textMuted.withOpacity(0.25),
+                          : AppColors.textMuted.withValues(alpha: 0.25),
                       shape: BoxShape.circle,
                     ),
                   );
@@ -151,37 +136,17 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                     onUpdate: (allergies) => _allergies = allergies,
                     initialValue: _allergies,
                   ),
-                  SkillLevelPage(
-                    onNext: _nextPage,
-                    onBack: _previousPage,
-                    onUpdate: (level) => _skillLevel = level,
-                    initialValue: _skillLevel,
-                  ),
                   PantryBasicsPage(
                     onNext: _nextPage,
                     onBack: _previousPage,
                     onUpdate: (items) => _pantryBasics = items,
                     initialValue: _pantryBasics,
                   ),
-                  CuisinePreferencesPage(
-                    onNext: _nextPage,
-                    onBack: _previousPage,
-                    onUpdate: (cuisines) => _cuisinePreferences = cuisines,
-                    initialValue: _cuisinePreferences,
-                  ),
                   KitchenEquipmentPage(
                     onNext: _nextPage,
                     onBack: _previousPage,
                     onUpdate: (equipment) => _kitchenEquipment = equipment,
                     initialValue: _kitchenEquipment,
-                  ),
-                  DislikesPage(
-                    onNext: _nextPage,
-                    onBack: _previousPage,
-                    onUpdateSpice: (level) => _spiceLevel = level,
-                    onUpdateDislikes: (items) => _dislikedItems = items,
-                    initialSpiceLevel: _spiceLevel,
-                    initialDislikedItems: _dislikedItems,
                   ),
                 ],
               ),

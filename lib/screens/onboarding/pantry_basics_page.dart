@@ -140,11 +140,11 @@ class _PantryBasicsPageState extends State<PantryBasicsPage> {
             return SelectableGlassButton(
               isSelected: isSelected,
               onTap: () => _toggleItem(item),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              borderRadius: 18,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Text(
                 item,
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style: TextStyle(
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: isSelected ? Colors.white : AppColors.textPrimary,
                 ),

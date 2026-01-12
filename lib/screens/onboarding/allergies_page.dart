@@ -106,27 +106,14 @@ class _AllergiesPageState extends State<AllergiesPage> {
                     return SelectableGlassButton(
                       isSelected: isSelected,
                       onTap: () => _toggleAllergy(allergy['name']),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            allergy['icon'],
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              allergy['name'],
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: isSelected ? Colors.white : AppColors.textPrimary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        '${allergy['icon']} ${allergy['name']}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     );
                   },

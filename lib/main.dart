@@ -3,13 +3,14 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'firebase_options.dart';
 import 'models/food_preferences.dart';
@@ -376,8 +377,10 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
               child: const Text('Annuler'),
             ),
             ElevatedButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim()),
+              onPressed: () {
+                final result = controller.text.trim();
+                if (mounted) Navigator.of(context).pop(result);
+              },
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -445,16 +448,20 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
     }
 
     if (_hasCompletedOnboarding!) {
-      return FrigoPage(
-        user: user,
-        preferences: _cachedPreferences,
+      return LiquidBackground(
+        child: FrigoPage(
+          user: user,
+          preferences: _cachedPreferences,
+        ),
       );
     }
 
-    return OnboardingFlow(
-      userId: user.uid,
-      existingPreferences: _cachedPreferences,
-      onComplete: _handleOnboardingCompleted,
+    return LiquidBackground(
+      child: OnboardingFlow(
+        userId: user.uid,
+        existingPreferences: _cachedPreferences,
+        onComplete: _handleOnboardingCompleted,
+      ),
     );
   }
 
@@ -463,84 +470,91 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
       return _buildFirstNameScreen();
     }
 
-    final card = SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: GlassContainer(
-          padding: const EdgeInsets.all(28),
-          borderRadius: 32,
-          backgroundOpacity: 0.28,
-          strokeOpacity: 0.22,
-          child: _showEmailForm ? _buildEmailForm() : _buildMainButtons(),
+    final card = LiquidEntrance(
+      offset: const Offset(0, 40),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: GlassContainer(
+            padding: const EdgeInsets.all(28),
+            borderRadius: 36,
+            backgroundOpacity: 0.35,
+            strokeOpacity: 0.3,
+            child: _showEmailForm ? _buildEmailForm() : _buildMainButtons(),
+          ),
         ),
       ),
     );
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(child: card),
+      backgroundColor: Colors.transparent,
+      body: LiquidBackground(
+        child: SafeArea(
+          child: Center(child: card),
+        ),
       ),
     );
   }
 
   Widget _buildFirstNameScreen() {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final availableWidth = constraints.maxWidth;
-                final size = MediaQuery.of(context).size;
-                final heroHeight = size.height * 0.96;
-                final cardWidth = availableWidth.clamp(240.0, 300.0);
-                final fridgeHeight = heroHeight * 2.0;
-                final targetWidth = fridgeHeight * 0.85;
-                final minWidth = cardWidth + 220;
-                final maxWidth = math.max(minWidth, size.width * 1.4);
-                final fridgeWidth = targetWidth.clamp(minWidth, maxWidth);
+      backgroundColor: Colors.transparent,
+      body: LiquidBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final availableWidth = constraints.maxWidth;
+                  final size = MediaQuery.of(context).size;
+                  final heroHeight = size.height * 0.96;
+                  final cardWidth = availableWidth.clamp(240.0, 310.0);
+                  final fridgeHeight = heroHeight * 1.8;
+                  final targetWidth = fridgeHeight * 0.8;
+                  final minWidth = cardWidth + 200;
+                  final maxWidth = math.max(minWidth, size.width * 1.3);
+                  final fridgeWidth = targetWidth.clamp(minWidth, maxWidth);
 
-                return SizedBox(
-                  height: heroHeight,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Align(
-                        alignment: const Alignment(0, -0.05),
-                        child: LiquidEntrance(
-                          offset: const Offset(0, -40),
-                          duration: const Duration(milliseconds: 900),
-                          child: SizedBox(
-                            height: fridgeHeight,
-                            width: fridgeWidth,
-                            child: Image.asset(
-                              _fridgeImageAsset,
-                              fit: BoxFit.contain,
+                  return SizedBox(
+                    height: heroHeight,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Align(
+                          alignment: const Alignment(0, -0.1),
+                          child: LiquidEntrance(
+                            offset: const Offset(0, -60),
+                            duration: const Duration(milliseconds: 1200),
+                            child: SizedBox(
+                              height: fridgeHeight,
+                              width: fridgeWidth,
+                              child: Image.asset(
+                                _fridgeImageAsset,
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Align(
-                        alignment: Alignment.center,
-                        child: LiquidEntrance(
-                          offset: const Offset(0, 60),
-                          delay: const Duration(milliseconds: 150),
-                          child: SizedBox(
-                            width: cardWidth,
-                            child: _GlassWelcomeCard(
-                              child: _buildWelcomeIntro(),
+                        Align(
+                          alignment: Alignment.center,
+                          child: LiquidEntrance(
+                            offset: const Offset(0, 80),
+                            delay: const Duration(milliseconds: 300),
+                            child: SizedBox(
+                              width: cardWidth,
+                              child: _GlassWelcomeCard(
+                                child: _buildWelcomeIntro(),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -614,9 +628,9 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.red[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.red[200]!),
+              color: Colors.white.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
             child: Text(
               _errorMessage!,
@@ -645,8 +659,8 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-              Center(
-                child: const Text(
+              const Center(
+                child: Text(
                   'Continuer avec Google',
                   style: TextStyle(
                     fontSize: 15,
@@ -680,8 +694,8 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-              Center(
-                child: const Text(
+              const Center(
+                child: Text(
                   'Continuer avec Apple',
                   style: TextStyle(
                     fontSize: 15,
@@ -715,7 +729,7 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
                     height: 20,
                     width: 20,
                     errorBuilder: (context, error, stackTrace) =>
-                        Icon(
+                        const Icon(
                           Icons.mail_outline,
                           size: 20,
                           color: Colors.black87,
@@ -723,8 +737,8 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-              Center(
-                child: const Text(
+              const Center(
+                child: Text(
                   'Continuer avec Email',
                   style: TextStyle(
                     fontSize: 15,
@@ -912,7 +926,7 @@ class _StayLoggedInCheckbox extends StatelessWidget {
               'Rester connecté',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textPrimary.withOpacity(0.85),
+                color: AppColors.textPrimary.withValues(alpha: 0.85),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1004,7 +1018,7 @@ class _FrigoPageState extends State<FrigoPage> {
 
       final streamed = await request.send();
       final resp = await http.Response.fromStream(streamed);
-      
+
       if (resp.statusCode == 200) {
         final json = jsonDecode(resp.body);
         final List<String> items = [];
@@ -1012,7 +1026,9 @@ class _FrigoPageState extends State<FrigoPage> {
           for (final it in json['items']) {
             if (it is String) {
               items.add(it);
-            } else if (it is Map && it['name'] != null) items.add(it['name'].toString());
+            } else if (it is Map && it['name'] != null) {
+              items.add(it['name'].toString());
+            }
           }
         }
         setState(() {
@@ -1021,7 +1037,7 @@ class _FrigoPageState extends State<FrigoPage> {
         if (!mounted) return;
         if (items.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Aucun aliment détecté dans l\'image')),
+            const SnackBar(content: Text('Aucun aliment détecté')),
           );
         }
       } else {
@@ -1032,9 +1048,14 @@ class _FrigoPageState extends State<FrigoPage> {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      if (kDebugMode) {
+        debugPrint('Fridge analysis error: $e');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
     } finally {
       setState(() => _loading = false);
       if (mounted) {
@@ -1043,14 +1064,21 @@ class _FrigoPageState extends State<FrigoPage> {
     }
   }
 
-  String get _userName {
+  String get userName {
     final email = widget.user.email ?? '';
-    if (email.isEmpty) return 'Chef';
+    if (email.isEmpty) {
+      return 'Chef';
+    }
     return email.split('@').first;
   }
 
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Déconnexion réussie')),
+      );
+    }
   }
 
   Future<void> _refreshPreferences() async {
@@ -1131,19 +1159,7 @@ class _FrigoPageState extends State<FrigoPage> {
   void _openFavorites() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => FavoriteRecipesPage(
-          recipes: _favoriteRecipes,
-          onToggleFavorite: (recipe) => _toggleFavoriteRecipe(recipe),
-          isFavorite: _isFavoriteRecipe,
-          onSelectTab: (tab) {
-            if (tab == DockTab.home) {
-              Navigator.of(context).pop();
-            } else if (tab == DockTab.scanner) {
-              Navigator.of(context).pop();
-              _pickAndUpload();
-            }
-          },
-        ),
+        builder: (_) => const FavoriteRecipesPage(),
       ),
     );
   }
@@ -1223,7 +1239,9 @@ class _FrigoPageState extends State<FrigoPage> {
           existingPreferences: existingPrefs,
           onComplete: () async {
             await _refreshPreferences();
-            if (mounted) Navigator.of(context).pop();
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
           },
         ),
       ),
@@ -1270,7 +1288,7 @@ class _FrigoPageState extends State<FrigoPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _userName,
+                      userName,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
@@ -1290,7 +1308,7 @@ class _FrigoPageState extends State<FrigoPage> {
           const SizedBox(height: 16),
           Divider(
             height: 1,
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.white.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 10),
           _MenuEntry(
@@ -1301,7 +1319,7 @@ class _FrigoPageState extends State<FrigoPage> {
           const SizedBox(height: 12),
           Divider(
             height: 1,
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.white.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 12),
           _MenuEntry(
@@ -1311,6 +1329,28 @@ class _FrigoPageState extends State<FrigoPage> {
             textColor: Colors.redAccent,
             onTap: () => _handleMenuAction(_MenuAction.logout),
           ),
+          const SizedBox(height: 24),
+          Center(
+            child: Opacity(
+              opacity: 0.6,
+              child: Column(
+                children: [
+                   const Icon(Icons.stars, color: AppColors.primaryBlue, size: 20),
+                   const SizedBox(height: 4),
+                   Text(
+                    'ÉTABLISSEMENT PAUL',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2.5,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
         ],
       ),
     );
@@ -1322,7 +1362,7 @@ class _FrigoPageState extends State<FrigoPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Cahier de cuisine'),
+        title: const Text('La Cuisine de Paul'),
         centerTitle: true,
         actions: [
           Padding(
@@ -1338,7 +1378,7 @@ class _FrigoPageState extends State<FrigoPage> {
                   strokeOpacity: 0.25,
                   child: const Icon(
                     Icons.menu_rounded,
-                    color: AppColors.textPrimary,
+                    color: AppColors.deepBlack,
                   ),
                 ),
               ),
@@ -1353,14 +1393,16 @@ class _FrigoPageState extends State<FrigoPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Salut $_userName 👋",
+                "Bienvenue, Chef $userName 👨‍🍳",
                 style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.deepBlack,
+                  letterSpacing: -0.5,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                "Prêt à scanner ton frigo et cuisiner ?",
+                "Qu'allons-nous créer ensemble aujourd'hui ?",
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppColors.textMuted,
                 ),
@@ -1391,7 +1433,7 @@ class _FrigoPageState extends State<FrigoPage> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _favoriteRecipes.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 16),
+                    separatorBuilder: (_, _) => const SizedBox(width: 16),
                     itemBuilder: (context, index) {
                       final recipe = _favoriteRecipes[index];
                       return GestureDetector(
@@ -1531,7 +1573,7 @@ class _FrigoPageState extends State<FrigoPage> {
   }) {
     final blur = selected ? 26.0 : 16.0;
     final borderColor =
-        selected ? Colors.white.withOpacity(0.7) : Colors.white.withOpacity(0.3);
+        selected ? Colors.white.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.3);
     final gradient = selected
         ? const LinearGradient(
             begin: Alignment.topLeft,
@@ -1555,7 +1597,7 @@ class _FrigoPageState extends State<FrigoPage> {
     final boxShadow = selected
         ? [
             BoxShadow(
-              color: AppColors.primaryBlue.withOpacity(0.32),
+              color: AppColors.primaryBlue.withValues(alpha: 0.32),
               blurRadius: 18,
               spreadRadius: -8,
               offset: const Offset(0, 10),
@@ -1597,7 +1639,7 @@ class _FrigoPageState extends State<FrigoPage> {
                     Icon(
                       Icons.close,
                       size: 16,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.1),
                     ),
                   ],
                 ],
@@ -1628,7 +1670,7 @@ class _FrigoPageState extends State<FrigoPage> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -1640,8 +1682,8 @@ class _FrigoPageState extends State<FrigoPage> {
                 child: Image.network(
                   image,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: AppColors.primaryBlue.withOpacity(0.1),
+                  errorBuilder: (_, _, _) => Container(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.15),
                     alignment: Alignment.center,
                     child: const Icon(Icons.restaurant, size: 36),
                   ),
@@ -1698,58 +1740,101 @@ class _FrigoPageState extends State<FrigoPage> {
   }
 
   Widget _buildScanHero(ThemeData theme) {
-    return SizedBox(
-      height: 340,
+    return Container(
+      height: 400,
+      margin: const EdgeInsets.only(bottom: 24),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Align(
             alignment: Alignment.topCenter,
-            child: Image.asset(
-              _fridgeImageAsset,
-              height: 320,
-              fit: BoxFit.contain,
+            child: Container(
+              height: 280,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(44),
+                image: DecorationImage(
+                  image: AssetImage(_fridgeImageAsset),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withValues(alpha: 0.1),
+                    BlendMode.darken,
+                  ),
+                ),
+              ),
             ),
           ),
           Positioned(
-            left: 0,
-            right: 0,
             bottom: 0,
+            left: 12,
+            right: 12,
             child: GlassContainer(
-              padding: const EdgeInsets.all(18),
-              borderRadius: 24,
+              padding: const EdgeInsets.all(24),
+              borderRadius: 44,
+              backgroundOpacity: 0.25,
+              strokeOpacity: 0.15,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _loading ? 'Analyse en cours…' : 'Scanner mon frigo',
+                    "L'ARRIVAGE DU JOUR",
                     style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                      letterSpacing: 1.5,
+                      color: AppColors.deepBlack,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  LiquidGlassButton(
-                    onPressed: _loading ? null : _pickAndUpload,
-                    height: 54,
-                    width: double.infinity,
-                    isBlue: true,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _loading ? Icons.hourglass_top : Icons.camera_alt_outlined,
-                          color: Colors.white,
+                  const SizedBox(height: 8),
+                  Text(
+                    "Paul est prêt à inspecter vos trésors culinaires.",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _PulseAnimation(
+                    active: !_loading,
+                    child: GestureDetector(
+                      onTap: _loading ? null : _pickAndUpload,
+                      child: Container(
+                        height: 56,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: AppColors.deepBlack,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _loading ? 'Analyse en cours' : 'Lancer un scan',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _loading ? Icons.hourglass_top : Icons.camera_alt_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                _loading ? 'INSPECTION...' : 'LANCER L\'ANALYSE',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.5,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
@@ -1782,8 +1867,8 @@ class _MenuEntry extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
-      splashColor: Colors.white.withOpacity(0.05),
-      highlightColor: Colors.white.withOpacity(0.08),
+      splashColor: Colors.white.withValues(alpha: 0.05),
+      highlightColor: Colors.white.withValues(alpha: 0.08),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
@@ -1794,7 +1879,7 @@ class _MenuEntry extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.35),
                 ),
               ),
               child: Icon(icon, size: 20, color: iconColor),
@@ -1809,7 +1894,7 @@ class _MenuEntry extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.textMuted),
+            const Icon(Icons.chevron_right, color: AppColors.textMuted),
           ],
         ),
       ),
@@ -1835,14 +1920,14 @@ class _GlassWelcomeCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withOpacity(0.78),
-                Colors.white.withOpacity(0.5),
-                const Color(0xFFE6F1FF).withOpacity(0.55),
+                Colors.white.withValues(alpha: 0.78),
+                Colors.white.withValues(alpha: 0.5),
+                const Color(0xFFE6F1FF).withValues(alpha: 0.55),
               ],
               stops: const [0.0, 0.45, 1.0],
             ),
             border: Border.all(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               width: 1,
             ),
             boxShadow: [
@@ -1853,7 +1938,7 @@ class _GlassWelcomeCard extends StatelessWidget {
                 spreadRadius: -8,
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
                 spreadRadius: -6,
@@ -1914,7 +1999,7 @@ class _AddFirstNameButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.09),
+                color: Colors.black.withValues(alpha: 0.09),
                 blurRadius: 35,
                 spreadRadius: -8,
                 offset: const Offset(0, 20),
@@ -2106,5 +2191,43 @@ class _LiquidEntranceState extends State<LiquidEntrance>
       },
       child: widget.child,
     );
+  }
+}
+
+class _PulseAnimation extends StatefulWidget {
+  final Widget child;
+  final bool active;
+  const _PulseAnimation({required this.child, this.active = true});
+
+  @override
+  State<_PulseAnimation> createState() => _PulseAnimationState();
+}
+
+class _PulseAnimationState extends State<_PulseAnimation> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _scale = Tween<double>(begin: 1.0, end: 1.03).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.active) return widget.child;
+    return ScaleTransition(scale: _scale, child: widget.child);
   }
 }

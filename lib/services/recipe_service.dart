@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/food_preferences.dart';
@@ -9,8 +10,6 @@ class RecipeService {
   /// 
   /// Returns a list of recipe maps containing title, ingredients, steps, etc.
   /// Returns null if the API call fails.
-  static bool _useSecondaryModel = false;
-
   // List of fallback models to ensure high availability
   static const List<String> _fallbackModels = [
     'google/gemini-2.0-flash-exp:free',
@@ -35,13 +34,15 @@ class RecipeService {
     // 3. Hardcoded high-quality free fallbacks
     final modelsToTry = <String>{
       ApiConfig.modelName,
-      if (ApiConfig.secondaryModelName != ApiConfig.modelName) ApiConfig.secondaryModelName,
+
       ..._fallbackModels,
     }.toList();
 
     for (final model in modelsToTry) {
       try {
-        print('🚀 Generating recipes using model: $model');
+        if (kDebugMode) {
+          debugPrint('🚀 Generating recipes using model: $model');
+        }
         
         final response = await http.post(
           Uri.parse('${ApiConfig.openRouterBaseUrl}/chat/completions'),
@@ -56,20 +57,23 @@ class RecipeService {
             'messages': [
               {
                 'role': 'system',
-                'content': '''Tu es un chef cuisinier expert spécialisé dans la cuisine "anti-gaspi". 
-Ta mission est de proposer des recettes RÉALISTES à partir d'une liste d'ingrédients.
+                'content': '''Tu es Chef Paul, un chef cuisinier triplement étoilé au Guide Michelin. 
+Ta mission est de mentorat : tu guides l'utilisateur (ton apprenti) pour transformer ses simples ingrédients en créations gastronomiques.
 
-RÈGLES STRICTES :
-1. N'utilise QUE les ingrédients listés + les basiques (sel, poivre, huile, farine, eau, sucre, ail/oignon si dispo).
-2. COHÉRENCE : Ne mélange pas des ingrédients qui ne vont pas ensemble (ex: pas de bière dans une salade de fruits). 
-3. INTERDIT ABSOLU : NE JAMAIS faire de sucré-salé. Les recettes doivent être SOIT salées SOIT sucrées, jamais les deux.
-4. RECETTES RÉELLES : Utilise UNIQUEMENT des noms de recettes qui existent vraiment (ex: "Quiche Lorraine", "Tarte Tatin", "Bœuf Bourguignon"). PAS de noms inventés.
-5. SIMPLICITÉ : Propose des étapes de cuisson logiques et précises.
-6. PRIORITÉ : Si un ingrédient est complexe (ex: "quiche" sous-entend une pâte), utilise-le comme base.
-7. FORMAT : Réponds toujours sous forme de JSON structuré.
-8. STYLE : Enlève les adverbes inutiles des recettes, sois direct et précis.
-9. IMAGES : Ne fournis PAS d'URL d'image, nous la générons nous-mêmes.
-10. Si les ingrédients fournis ne permettent pas de faire une recette mangeable, réponds : {"erreur": "Combinaison impossible"}.
+TON DE VOIX :
+- Professionnel, exigeant mais encourageant.
+- Tu appelles l'utilisateur "Chef" ou "mon apprenti".
+- Tu utilises un vocabulaire culinaire précis (ex: "Saisir", "Déglacer", "Réduction", "Dresser").
+- Tes titres de recettes doivent être élégants et dignes d'une carte de grand restaurant.
+
+RÈGLES D'OR DE PAUL :
+1. N'utilise QUE les ingrédients listés + les basiques indispensables (sel, poivre, huile d'olive, beurre, farine, ail/échalote si dispo).
+2. GASTRONOMIE RÉELLE : Propose des recettes qui existent ou qui sont des classiques revisités avec brio. PAS de noms fantaisistes.
+3. ÉLÉGANCE : Même une omelette devient "L'Omelette Signature aux fines herbes".
+4. PRÉCISION : Les étapes doivent être claires, directes, sans fioritures.
+5. FORMAT : Réponds toujours sous forme de JSON structuré.
+6. Si les ingrédients sont insuffisants pour une assiette digne de ce nom, réponds : {"erreur": "Ingrédients insuffisants pour une création de Chef"}.
+
 Tu réponds toujours en JSON valide uniquement, sans texte avant ou après.'''
               },
               {
@@ -89,22 +93,32 @@ Tu réponds toujours en JSON valide uniquement, sans texte avant ou après.'''
           // Parse the JSON response
           final recipes = _parseRecipesFromResponse(content);
           if (recipes.isNotEmpty) {
-            print('✅ Success with model: $model');
+            if (kDebugMode) {
+              debugPrint('✅ Success with model: $model');
+            }
             return recipes;
           } else {
-             print('⚠️ Model $model returned empty or invalid recipes. Trying next...');
+             if (kDebugMode) {
+               debugPrint('⚠️ Model $model returned empty or invalid recipes. Trying next...');
+             }
           }
         } else {
-          print('❌ Error with model $model: ${response.statusCode} - ${response.body}');
+          if (kDebugMode) {
+            debugPrint('❌ Error with model $model: ${response.statusCode} - ${response.body}');
+          }
           // Continue to next model loop
         }
       } catch (e) {
-        print('❌ Exception with model $model: $e');
+        if (kDebugMode) {
+          debugPrint('❌ Exception with model $model: $e');
+        }
         // Continue to next model loop
       }
     }
 
-    print('❌ All models failed to generate recipes.');
+    if (kDebugMode) {
+      debugPrint('❌ All models failed to generate recipes.');
+    }
     return null;
   }
 
@@ -138,13 +152,12 @@ Tu réponds toujours en JSON valide uniquement, sans texte avant ou après.'''
     }
     
     buffer.writeln('INSTRUCTIONS POUR LES RECETTES :');
-    buffer.writeln('1. Utilise au MAXIMUM les ingrédients disponibles listés ci-dessus (au moins 3 ingrédients PAR recette)');
-    buffer.writeln('2. Les recettes doivent être de VRAIES BONNES recettes professionnelles, appétissantes et qui donnent envie');
-    buffer.writeln('3. Les recettes doivent être réalisables en 10-25 minutes');
-    buffer.writeln('4. Chaque recette doit être différente et originale');
-    buffer.writeln('5. Respecte ABSOLUMENT les allergies et restrictions si mentionnées');
-    buffer.writeln('6. Les quantités doivent être précises');
-    buffer.writeln('7. Pas d\'adverbes inutiles dans les étapes, sois direct');
+    buffer.writeln('1. Utilise au MAXIMUM les ingrédients disponibles (au moins 3 ingrédients PAR recette)');
+    buffer.writeln('2. Les recettes doivent être dignes d\'une carte de restaurant étoilé, visuellement magnifiques dans la description');
+    buffer.writeln('3. Les recettes doivent rester réalisables pour un apprenti en 15-30 minutes');
+    buffer.writeln('4. Respecte scrupuleusement les allergies et restrictions');
+    buffer.writeln('5. Les quantités doivent être gastronomiques et précises');
+    buffer.writeln('6. Le vocabulaire doit être celui d\'un Chef (ex: "Réserver", "Infuser", "Napper")');
     buffer.writeln();
     buffer.writeln('Réponds UNIQUEMENT avec un JSON valide dans ce format exact (sans texte avant ou après) :');
     buffer.writeln('''
@@ -238,8 +251,10 @@ Tu réponds toujours en JSON valide uniquement, sans texte avant ou après.'''
         };
       }).toList();
     } catch (e) {
-      print('Error parsing recipes from response: $e');
-      print('Response content: $content');
+      if (kDebugMode) {
+        debugPrint('Error parsing recipes from response: $e');
+        debugPrint('Response content: $content');
+      }
       return [];
     }
   }
